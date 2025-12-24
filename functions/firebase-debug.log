@@ -1,0 +1,213 @@
+[debug] [2025-12-22T19:59:39.767Z] ----------------------------------------------------------------------
+[debug] [2025-12-22T19:59:39.769Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\BrianAcquisto\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js functions:secrets:set GHL_API_KEY --project nueforms-sales-intake-999
+[debug] [2025-12-22T19:59:39.769Z] CLI Version:   14.9.0
+[debug] [2025-12-22T19:59:39.769Z] Platform:      win32
+[debug] [2025-12-22T19:59:39.769Z] Node Version:  v22.18.0
+[debug] [2025-12-22T19:59:39.770Z] Time:          Mon Dec 22 2025 13:59:39 GMT-0600 (Central Standard Time)
+[debug] [2025-12-22T19:59:39.770Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-12-22T19:59:39.921Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-22T19:59:39.922Z] > authorizing via signed-in user (nuesynergyit@gmail.com)
+[debug] [2025-12-22T19:59:39.923Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:39.923Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:39.924Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com [none]
+[debug] [2025-12-22T19:59:39.924Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T19:59:40.213Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com 200
+[debug] [2025-12-22T19:59:40.214Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com [omitted]
+[debug] [2025-12-22T19:59:40.214Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:40.214Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:40.214Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com:enable [none]
+[debug] [2025-12-22T19:59:40.214Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com:enable x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T19:59:40.424Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com:enable 400
+[debug] [2025-12-22T19:59:40.424Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/secretmanager.googleapis.com:enable [omitted]
+[error] 
+[error] Error: Your project nueforms-sales-intake-999 must be on the Blaze (pay-as-you-go) plan to complete this command. Required API secretmanager.googleapis.com can't be enabled until the upgrade is complete. To upgrade, visit the following URL:
+
+https://console.firebase.google.com/project/nueforms-sales-intake-999/usage/details
+[debug] [2025-12-22T19:59:51.336Z] ----------------------------------------------------------------------
+[debug] [2025-12-22T19:59:51.337Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\BrianAcquisto\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting --project nueforms-sales-intake-999
+[debug] [2025-12-22T19:59:51.337Z] CLI Version:   14.9.0
+[debug] [2025-12-22T19:59:51.338Z] Platform:      win32
+[debug] [2025-12-22T19:59:51.338Z] Node Version:  v22.18.0
+[debug] [2025-12-22T19:59:51.338Z] Time:          Mon Dec 22 2025 13:59:51 GMT-0600 (Central Standard Time)
+[debug] [2025-12-22T19:59:51.338Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-12-22T19:59:51.485Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-22T19:59:51.485Z] > authorizing via signed-in user (nuesynergyit@gmail.com)
+[debug] [2025-12-22T19:59:51.486Z] [iam] checking project nueforms-sales-intake-999 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-12-22T19:59:51.486Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:51.486Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:51.487Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions [none]
+[debug] [2025-12-22T19:59:51.487Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T19:59:51.487Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-12-22T19:59:51.687Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions 200
+[debug] [2025-12-22T19:59:51.688Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-12-22T19:59:51.688Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:51.688Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:51.688Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/nueforms-sales-intake-999 [none]
+[debug] [2025-12-22T19:59:52.025Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/nueforms-sales-intake-999 200
+[debug] [2025-12-22T19:59:52.025Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/nueforms-sales-intake-999 {"projectId":"nueforms-sales-intake-999","projectNumber":"804050650150","displayName":"NueForms Sales","name":"projects/nueforms-sales-intake-999","resources":{"hostingSite":"nueforms-sales-intake-999"},"state":"ACTIVE","etag":"1_0dd38ac6-0ab1-4da2-aa64-b5565bdf99ce"}
+[info] 
+[info] === Deploying to 'nueforms-sales-intake-999'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2025-12-22T19:59:52.028Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:52.028Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:52.028Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions [none]
+[debug] [2025-12-22T19:59:52.029Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-12-22T19:59:53.049Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions 200
+[debug] [2025-12-22T19:59:53.050Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions {"name":"projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[nueforms-sales-intake-999]: beginning deploy... 
+[info] i  hosting[nueforms-sales-intake-999]: found 1 files in public 
+[debug] [2025-12-22T19:59:53.059Z] [hosting] uploading with 200 concurrency
+[debug] [2025-12-22T19:59:53.059Z] [hosting] hash cache [cHVibGlj] not populated
+[debug] [2025-12-22T19:59:53.062Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.062Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.063Z] [hosting] hash cache [cHVibGlj] stored for 1 files
+[debug] [2025-12-22T19:59:53.063Z] [hosting][hash queue][FINAL] {"max":2,"min":2,"avg":2,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":4}
+[debug] [2025-12-22T19:59:53.063Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8:populateFiles [none]
+[debug] [2025-12-22T19:59:53.063Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8:populateFiles {"files":{"/index.html":"333d5275ddc97f98c6de352b3d55787404897f27c3028967ccb72fdd9e7749c8"}}
+[debug] [2025-12-22T19:59:53.166Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8:populateFiles 200
+[debug] [2025-12-22T19:59:53.166Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8:populateFiles {"uploadRequiredHashes":["333d5275ddc97f98c6de352b3d55787404897f27c3028967ccb72fdd9e7749c8"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8/files"}
+[debug] [2025-12-22T19:59:53.167Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.167Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.167Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8/files/333d5275ddc97f98c6de352b3d55787404897f27c3028967ccb72fdd9e7749c8 [none]
+[debug] [2025-12-22T19:59:53.167Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8/files/333d5275ddc97f98c6de352b3d55787404897f27c3028967ccb72fdd9e7749c8 [stream]
+[debug] [2025-12-22T19:59:53.168Z] [hosting][populate queue][FINAL] {"max":105,"min":105,"avg":105,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":106}
+[debug] [2025-12-22T19:59:53.168Z] [hosting] uploads queued: 1
+[debug] [2025-12-22T19:59:53.727Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8/files/333d5275ddc97f98c6de352b3d55787404897f27c3028967ccb72fdd9e7749c8 200
+[debug] [2025-12-22T19:59:53.727Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8/files/333d5275ddc97f98c6de352b3d55787404897f27c3028967ccb72fdd9e7749c8 [stream]
+[debug] [2025-12-22T19:59:53.727Z] [hosting][upload queue][FINAL] {"max":560,"min":560,"avg":560,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":560}
+[info] i  hosting: upload complete 
+[info] +  hosting[nueforms-sales-intake-999]: file upload complete 
+[debug] [2025-12-22T19:59:53.728Z] [hosting] deploy completed after 677ms
+[debug] [2025-12-22T19:59:53.728Z] [
+  {
+    "config": {
+      "public": "public",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "site": "nueforms-sales-intake-999"
+    },
+    "version": "projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8"
+  }
+]
+[info] i  hosting[nueforms-sales-intake-999]: finalizing version... 
+[debug] [2025-12-22T19:59:53.729Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.729Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.729Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8 updateMask=status%2Cconfig
+[debug] [2025-12-22T19:59:53.729Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8 {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2025-12-22T19:59:53.910Z] <<< [apiv2][status] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8 200
+[debug] [2025-12-22T19:59:53.910Z] <<< [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8 {"name":"projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2025-12-22T19:59:53.095954Z","createUser":{"email":"nuesynergyit@gmail.com"},"finalizeTime":"2025-12-22T19:59:54.519392Z","finalizeUser":{"email":"nuesynergyit@gmail.com"}}
+[debug] [2025-12-22T19:59:53.910Z] [hosting] finalized version for nueforms-sales-intake-999:[object Object]
+[info] +  hosting[nueforms-sales-intake-999]: version finalized 
+[info] i  hosting[nueforms-sales-intake-999]: releasing new version... 
+[debug] [2025-12-22T19:59:53.910Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.911Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T19:59:53.911Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/channels/live/releases versionName=projects%2F804050650150%2Fsites%2Fnueforms-sales-intake-999%2Fversions%2F5db543a90fce59e8
+[debug] [2025-12-22T19:59:53.911Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/channels/live/releases {}
+[debug] [2025-12-22T19:59:54.051Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/channels/live/releases 200
+[debug] [2025-12-22T19:59:54.052Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/nueforms-sales-intake-999/channels/live/releases {"name":"projects/804050650150/sites/nueforms-sales-intake-999/channels/live/releases/1766433594124000","version":{"name":"projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2025-12-22T19:59:53.095954Z","createUser":{"email":"nuesynergyit@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocI0aLHUdTc0kSHufHszG_3THen1DN9X8wPO-moij7ktc5NRNQ=mo"},"finalizeTime":"2025-12-22T19:59:54.519392Z","finalizeUser":{"email":"nuesynergyit@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocI0aLHUdTc0kSHufHszG_3THen1DN9X8wPO-moij7ktc5NRNQ=mo"}},"type":"DEPLOY","releaseTime":"2025-12-22T19:59:54.124Z","releaseUser":{"email":"nuesynergyit@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocI0aLHUdTc0kSHufHszG_3THen1DN9X8wPO-moij7ktc5NRNQ=mo"}}
+[debug] [2025-12-22T19:59:54.052Z] [hosting] release: {"name":"projects/804050650150/sites/nueforms-sales-intake-999/channels/live/releases/1766433594124000","version":{"name":"projects/804050650150/sites/nueforms-sales-intake-999/versions/5db543a90fce59e8","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2025-12-22T19:59:53.095954Z","createUser":{"email":"nuesynergyit@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocI0aLHUdTc0kSHufHszG_3THen1DN9X8wPO-moij7ktc5NRNQ=mo"},"finalizeTime":"2025-12-22T19:59:54.519392Z","finalizeUser":{"email":"nuesynergyit@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocI0aLHUdTc0kSHufHszG_3THen1DN9X8wPO-moij7ktc5NRNQ=mo"}},"type":"DEPLOY","releaseTime":"2025-12-22T19:59:54.124Z","releaseUser":{"email":"nuesynergyit@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocI0aLHUdTc0kSHufHszG_3THen1DN9X8wPO-moij7ktc5NRNQ=mo"}}
+[info] +  hosting[nueforms-sales-intake-999]: release complete 
+[info] 
+[info] +  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/nueforms-sales-intake-999/overview
+[info] Hosting URL: https://nueforms-sales-intake-999.web.app
+[debug] [2025-12-22T20:00:01.391Z] ----------------------------------------------------------------------
+[debug] [2025-12-22T20:00:01.393Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\BrianAcquisto\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions --project nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:01.393Z] CLI Version:   14.9.0
+[debug] [2025-12-22T20:00:01.393Z] Platform:      win32
+[debug] [2025-12-22T20:00:01.393Z] Node Version:  v22.18.0
+[debug] [2025-12-22T20:00:01.393Z] Time:          Mon Dec 22 2025 14:00:01 GMT-0600 (Central Standard Time)
+[debug] [2025-12-22T20:00:01.394Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-12-22T20:00:01.539Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-22T20:00:01.540Z] > authorizing via signed-in user (nuesynergyit@gmail.com)
+[debug] [2025-12-22T20:00:01.540Z] [iam] checking project nueforms-sales-intake-999 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-12-22T20:00:01.541Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:01.541Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:01.541Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions [none]
+[debug] [2025-12-22T20:00:01.541Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:01.542Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-12-22T20:00:01.702Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions 200
+[debug] [2025-12-22T20:00:01.702Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-12-22T20:00:01.702Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:01.703Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:01.703Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-12-22T20:00:01.703Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-12-22T20:00:02.009Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions 404
+[debug] [2025-12-22T20:00:02.009Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}}
+[debug] [2025-12-22T20:00:02.010Z] [functions] service account IAM check errored, deploy may fail: Request to https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account","status":404}
+[info] 
+[info] === Deploying to 'nueforms-sales-intake-999'...
+[info] 
+[info] i  deploying functions 
+[debug] [2025-12-22T20:00:02.011Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.012Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.012Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999 [none]
+[debug] [2025-12-22T20:00:02.092Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999 200
+[debug] [2025-12-22T20:00:02.092Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999 {"projectNumber":"804050650150","projectId":"nueforms-sales-intake-999","lifecycleState":"ACTIVE","name":"NueForms Sales","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-12-22T19:58:01.254726Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[debug] [2025-12-22T20:00:02.093Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.093Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.094Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.094Z] Checked if tokens are valid: true, expires at: 1766437019942
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2025-12-22T20:00:02.094Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.094Z] Checked if tokens are valid: true, expires at: 1766437019942
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-12-22T20:00:02.094Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.094Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.094Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com [none]
+[debug] [2025-12-22T20:00:02.094Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.095Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/runtimeconfig.googleapis.com [none]
+[debug] [2025-12-22T20:00:02.095Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.096Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com [none]
+[debug] [2025-12-22T20:00:02.096Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.097Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com [none]
+[debug] [2025-12-22T20:00:02.097Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.356Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com 200
+[debug] [2025-12-22T20:00:02.356Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com [omitted]
+[warn] !  artifactregistry: missing required API artifactregistry.googleapis.com. Enabling now... 
+[debug] [2025-12-22T20:00:02.356Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.356Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.356Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com:enable [none]
+[debug] [2025-12-22T20:00:02.356Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com:enable x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.363Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/runtimeconfig.googleapis.com 200
+[debug] [2025-12-22T20:00:02.363Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2025-12-22T20:00:02.373Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com 200
+[debug] [2025-12-22T20:00:02.373Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudfunctions.googleapis.com. Enabling now... 
+[debug] [2025-12-22T20:00:02.373Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.373Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.374Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com:enable [none]
+[debug] [2025-12-22T20:00:02.374Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com:enable x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.395Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com 200
+[debug] [2025-12-22T20:00:02.395Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudbuild.googleapis.com. Enabling now... 
+[debug] [2025-12-22T20:00:02.395Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.395Z] Checked if tokens are valid: true, expires at: 1766437019942
+[debug] [2025-12-22T20:00:02.396Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com:enable [none]
+[debug] [2025-12-22T20:00:02.396Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com:enable x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-22T20:00:02.579Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com:enable 400
+[debug] [2025-12-22T20:00:02.579Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/artifactregistry.googleapis.com:enable [omitted]
+[debug] [2025-12-22T20:00:02.628Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com:enable 400
+[debug] [2025-12-22T20:00:02.628Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudbuild.googleapis.com:enable [omitted]
+[error] 
+[error] Error: Your project nueforms-sales-intake-999 must be on the Blaze (pay-as-you-go) plan to complete this command. Required API artifactregistry.googleapis.com can't be enabled until the upgrade is complete. To upgrade, visit the following URL:
+
+https://console.firebase.google.com/project/nueforms-sales-intake-999/usage/details
+[debug] [2025-12-22T20:00:02.745Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com:enable 200
+[debug] [2025-12-22T20:00:02.745Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/nueforms-sales-intake-999/services/cloudfunctions.googleapis.com:enable [omitted]

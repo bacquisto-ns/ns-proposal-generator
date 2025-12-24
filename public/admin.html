@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opportunity Admin - NueSynergy</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body class="admin-page">
+    <div class="container full-width">
+        <div class="header" style="flex-direction: row; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p class="subtitle">Sales Opportunity Submissions</p>
+            </div>
+            <a href="new-opportunity.html" class="btn secondary-btn">New Opportunity</a>
+        </div>
+
+        <div class="tabs-container" style="margin-bottom: 20px;">
+            <button class="btn tab-btn active" data-tab="opportunities">Opportunities</button>
+            <button class="btn tab-btn" data-tab="auditLogs">Audit Log</button>
+        </div>
+
+        <div id="opportunitiesView" class="view-section"
+            style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <div class="table-container shadow-container" style="flex: 1; overflow-y: auto;">
+                <table id="adminTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Employer</th>
+                            <th>Broker</th>
+                            <th>Products</th>
+                            <th>Employees</th>
+                            <th>Yearly Total</th>
+                            <th>Status</th>
+                            <th>GHL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminBody">
+                        <tr>
+                            <td colspan="8" class="text-center">Loading opportunities...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="auditLogsView" class="view-section"
+            style="display: none; flex: 1; flex-direction: column; min-height: 0;">
+            <div class="table-container shadow-container" style="flex: 1; overflow-y: auto;">
+                <table id="auditTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>Resource Type</th>
+                            <th>Resource ID</th>
+                            <th>Details</th>
+                            <th>User/IP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditBody">
+                        <tr>
+                            <td colspan="6" class="text-center">Loading audit logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination-controls"
+                style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+                <button id="prevPageBtn" class="btn secondary-btn" style="width: auto;" disabled>Previous</button>
+                <span id="pageInfo">Page 1</span>
+                <button id="nextPageBtn" class="btn secondary-btn" style="width: auto;">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

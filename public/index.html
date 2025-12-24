@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Opportunity Intake - NueSynergy</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div id="formSection">
+            <div class="header" style="position: relative;">
+                <!-- Logo placeholder or text -->
+                <h1>NueSynergy</h1>
+                <p class="subtitle">Sales Opportunity Intake Portal</p>
+                <a href="admin.html" class="btn secondary-btn"
+                    style="position: absolute; top: 0; right: 0; width: auto; margin: 0; padding: 8px 16px; font-size: 0.8rem;">Admin
+                    Dashboard</a>
+            </div>
+
+            <form id="opportunityForm">
+                <div class="form-grid">
+                    <!-- Opportunity Information -->
+                    <div class="form-group full-width">
+                        <label for="employerName" class="required">Employer Name</label>
+                        <input type="text" id="employerName" name="employerName" placeholder="Enter company name"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brokerName" class="required">Broker Name</label>
+                        <div class="lookup-wrapper">
+                            <input type="text" id="brokerName" name="brokerName" placeholder="Full name" required
+                                autocomplete="off">
+                            <div id="brokerLookupResults" class="lookup-results"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brokerEmail" class="required">Broker Email</label>
+                        <input type="email" id="brokerEmail" name="brokerEmail" placeholder="email@company.com"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="effectiveDate" class="required">Effective Date</label>
+                        <input type="date" id="effectiveDate" name="effectiveDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="proposalDate" class="required">Proposal Date</label>
+                        <input type="date" id="proposalDate" name="proposalDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="totalEmployees" class="required">Total Number of Employees</label>
+                        <input type="number" id="totalEmployees" name="totalEmployees" placeholder="e.g. 150" required
+                            min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="opportunitySource" class="required">Opportunity Source</label>
+                        <select id="opportunitySource" name="opportunitySource" required>
+                            <option value="" disabled selected>Select source...</option>
+                            <option value="Broker">Broker</option>
+                            <option value="Direct">Direct</option>
+                            <option value="Referral">Referral</option>
+                            <option value="Inbound">Inbound</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brokerAgency">Broker Agency (if applicable)</label>
+                        <input type="text" id="brokerAgency" name="brokerAgency" placeholder="Agency name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="currentAdministrator">Current Administrator</label>
+                        <input type="text" id="currentAdministrator" name="currentAdministrator" placeholder="Optional">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="benAdminSystem">Ben Admin System</label>
+                        <input type="text" id="benAdminSystem" name="benAdminSystem" placeholder="Optional system name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assignedTo" class="required">Opportunity Owner</label>
+                        <select id="assignedTo" name="assignedTo" required>
+                            <option value="" disabled selected>Loading owners...</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Product Selection Section -->
+                <div class="products-section">
+                    <div class="section-header">
+                        <h2>Products & Pricing</h2>
+                        <button type="button" id="addProductBtn" class="secondary-btn">+ Add Product</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="productTable">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Pricing Tier</th>
+                                    <th class="text-center">Employees</th>
+                                    <th class="text-center">Rate</th>
+                                    <th class="text-center">Override</th>
+                                    <th class="text-right">Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="productBody">
+                                <!-- Rows added dynamically -->
+                            </tbody>
+                            <tfoot>
+                                <tr id="bundlingStatusRow" style="display: none;">
+                                    <td colspan="5" class="text-right">
+                                        <span class="bundling-badge">✨ Bundled Discount Applied</span>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-right">Total Monthly Fee:</td>
+                                    <td id="grandTotal" class="text-right">$0.00</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-right">Total Yearly Fee:</td>
+                                    <td id="yearlyTotal" class="text-right">$0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div id="approvalNotice" class="approval-notice" style="display: none;">
+                        ⚠️ Notice: Price override applied. This request requires approval from President Josh Collins.
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn">Create Opportunity</button>
+            </form>
+        </div>
+
+        <!-- Success View -->
+        <div id="successMessage">
+            <div class="success-icon">✓</div>
+            <div class="success-title">Opportunity Created!</div>
+            <p class="success-body" id="successDetail">The opportunity has been successfully added to the GHL pipeline.
+            </p>
+            <button type="button" class="reset-btn" onclick="resetPortal()">Add Another Opportunity</button>
+        </div>
+    </div>
+
+    <!-- Product Row Template -->
+    <template id="productRowTemplate">
+        <tr class="product-main-row">
+            <td>
+                <select class="product-select" required>
+                    <option value="" disabled selected>Select Product</option>
+                </select>
+            </td>
+            <td>
+                <select class="tier-select"></select>
+            </td>
+            <td>
+                <input type="number" class="employees-input" value="0" min="0">
+            </td>
+            <td>
+                <input type="text" class="rate-input" readonly value="0.00">
+            </td>
+            <td class="text-center">
+                <input type="checkbox" class="override-checkbox">
+            </td>
+            <td class="text-right">
+                <span class="row-total">$0.00</span>
+            </td>
+            <td>
+                <button type="button" class="remove-btn">&times;</button>
+            </td>
+        </tr>
+        <tr class="override-justification-row" style="display: none;">
+            <td colspan="7">
+                <div class="override-justification">
+                    <textarea class="justification-input" placeholder="Enter justification for price override..."
+                        rows="2"></textarea>
+                </div>
+            </td>
+        </tr>
+    </template>
+
+    <script src="ghl-api.js"></script>
+</body>
+
+</html>
