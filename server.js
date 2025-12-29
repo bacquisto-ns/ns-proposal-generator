@@ -266,6 +266,7 @@ async function sendApprovalEmail(data, opportunityId) {
         const productRows = productsWithOverride.map(p => `
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.product}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.employees || '0'}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; color: #d32f2f; font-weight: bold; text-align: left;">$${p.rate}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; font-style: italic; color: #666; text-align: left;">${p.justification || 'N/A'}</td>
             </tr>
@@ -289,6 +290,8 @@ async function sendApprovalEmail(data, opportunityId) {
                             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                                 <tr><td style="padding: 5px 0; width: 140px;"><strong>Employer:</strong></td><td>${data.contact?.companyName || data.name}</td></tr>
                                 <tr><td style="padding: 5px 0;"><strong>Broker:</strong></td><td>${data.contact?.name || 'N/A'}</td></tr>
+                                <tr><td style="padding: 5px 0;"><strong>Sales Person:</strong></td><td>${data.assignedToName || 'N/A'}</td></tr>
+                                <tr><td style="padding: 5px 0;"><strong>Total Employees:</strong></td><td>${data.customFields.find(f => f.key === 'opportunity.total_employees')?.field_value || 'N/A'}</td></tr>
                                 <tr><td style="padding: 5px 0;"><strong>Effective Date:</strong></td><td>${data.customFields.find(f => f.key === 'opportunity.effective_date')?.field_value || 'N/A'}</td></tr>
                                 <tr><td style="padding: 5px 0;"><strong>Yearly Value:</strong></td><td>$${data.monetaryValue}</td></tr>
                             </table>
@@ -299,6 +302,7 @@ async function sendApprovalEmail(data, opportunityId) {
                             <thead style="background-color: #f1f5f9;">
                                 <tr>
                                     <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Product</th>
+                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2 solid #ddd;">Employees</th>
                                     <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Rate</th>
                                     <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Justification</th>
                                 </tr>

@@ -1,0 +1,91 @@
+[debug] [2025-12-29T18:08:14.643Z] ----------------------------------------------------------------------
+[debug] [2025-12-29T18:08:14.644Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Brian\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:api
+[debug] [2025-12-29T18:08:14.644Z] CLI Version:   15.1.0
+[debug] [2025-12-29T18:08:14.644Z] Platform:      win32
+[debug] [2025-12-29T18:08:14.644Z] Node Version:  v24.12.0
+[debug] [2025-12-29T18:08:14.644Z] Time:          Mon Dec 29 2025 12:08:14 GMT-0600 (Central Standard Time)
+[debug] [2025-12-29T18:08:14.644Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-12-29T18:08:15.418Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-29T18:08:15.418Z] > authorizing via signed-in user (nuesynergyit@gmail.com)
+[debug] [2025-12-29T18:08:15.418Z] [iam] checking project nueforms-sales-intake-999 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-12-29T18:08:15.419Z] Checked if tokens are valid: false, expires at: 1767032042643
+[debug] [2025-12-29T18:08:15.419Z] Checked if tokens are valid: false, expires at: 1767032042643
+[debug] [2025-12-29T18:08:15.419Z] > refreshing access token with scopes: []
+[debug] [2025-12-29T18:08:15.420Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-29T18:08:15.420Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-29T18:08:15.581Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-29T18:08:15.581Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-29T18:08:15.592Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions [none]
+[debug] [2025-12-29T18:08:15.592Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions x-goog-quota-user=projects/nueforms-sales-intake-999
+[debug] [2025-12-29T18:08:15.592Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-12-29T18:08:15.841Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions 200
+[debug] [2025-12-29T18:08:15.842Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-12-29T18:08:15.842Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:15.842Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:15.842Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-12-29T18:08:15.843Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-12-29T18:08:16.125Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-12-29T18:08:16.125Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/nueforms-sales-intake-999/serviceAccounts/nueforms-sales-intake-999@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'nueforms-sales-intake-999'...
+[info] 
+[info] i  deploying functions 
+[debug] [2025-12-29T18:08:16.129Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:16.129Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:16.129Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999 [none]
+[debug] [2025-12-29T18:08:16.208Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999 200
+[debug] [2025-12-29T18:08:16.208Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/nueforms-sales-intake-999 {"projectNumber":"804050650150","projectId":"nueforms-sales-intake-999","lifecycleState":"ACTIVE","name":"NueForms Sales","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-12-22T19:58:01.254726Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-12-29T18:08:16.212Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:16.212Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:16.212Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/nueforms-sales-intake-999/adminSdkConfig [none]
+[debug] [2025-12-29T18:08:16.519Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/nueforms-sales-intake-999/adminSdkConfig 200
+[debug] [2025-12-29T18:08:16.519Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/nueforms-sales-intake-999/adminSdkConfig {"projectId":"nueforms-sales-intake-999","storageBucket":"nueforms-sales-intake-999.firebasestorage.app"}
+[debug] [2025-12-29T18:08:16.520Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:16.520Z] Checked if tokens are valid: true, expires at: 1767035294581
+[debug] [2025-12-29T18:08:16.520Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/nueforms-sales-intake-999/configs [none]
+[debug] [2025-12-29T18:08:16.748Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/nueforms-sales-intake-999/configs 200
+[debug] [2025-12-29T18:08:16.748Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/nueforms-sales-intake-999/configs {}
+[debug] [2025-12-29T18:08:16.748Z] Validating nodejs source
+[warn] !  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] !  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2025-12-29T18:08:17.367Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.0.1",
+    "firebase-functions": "^6.1.1",
+    "form-data": "^4.0.0",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.17.2"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.4.0"
+  },
+  "private": true
+}
+[debug] [2025-12-29T18:08:17.367Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2025-12-29T18:08:17.368Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-12-29T18:08:17.401Z] Found firebase-functions binary at 'C:\ns\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8562
+
+[debug] [2025-12-29T18:08:17.800Z] Got response from /__/functions.yaml {"endpoints":{"api":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","secretEnvironmentVariables":[{"key":"GHL_API_KEY"}],"labels":{},"httpsTrigger":{},"entryPoint":"api"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{},"params":[{"type":"secret","name":"GHL_API_KEY"}]}
