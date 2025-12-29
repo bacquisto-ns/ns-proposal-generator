@@ -263,38 +263,84 @@ async function sendApprovalEmail(data, opportunityId) {
 
         if (productsWithOverride.length === 0) return;
 
-        const productDetailsHtml = productsWithOverride.map(p => `
-            <li>
-                <strong>Product:</strong> ${p.product}<br>
-                <strong>Override Rate:</strong> $${p.rate}<br>
-                <strong>Justification:</strong> ${p.justification || 'No justification provided'}
-            </li>
+        const productRows = productsWithOverride.map(p => `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.product}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #d32f2f; font-weight: bold; text-align: left;">$${p.rate}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-style: italic; color: #666; text-align: left;">${p.justification || 'N/A'}</td>
+            </tr>
         `).join('');
 
+        const baseUrl = 'http://localhost:3000'; // Specific to local development
+
         const emailBody = `
-            <h3>Price Override Approval Request</h3>
-            <p>An opportunity has been created that requires your approval due to price overrides.</p>
-            <ul>
-                <li><strong>Employer:</strong> ${data.contact?.companyName || data.name}</li>
-                <li><strong>Opportunity Name:</strong> ${data.name}</li>
-                <li><strong>Broker:</strong> ${data.contact?.name || 'N/A'}</li>
-                <li><strong>Effective Date:</strong> ${data.customFields.find(f => f.key === 'opportunity.effective_date')?.field_value || 'N/A'}</li>
-                <li><strong>Yearly Value:</strong> $${data.monetaryValue}</li>
-            </ul>
-            <h4>Overrides:</h4>
-            <ul>
-                ${productDetailsHtml}
-            </ul>
-            <p>Please review this opportunity in GHL: <a href="https://app.gohighlevel.com/v2/location/${data.locationId}/opportunities/list">Opportunity Pipeline</a></p>
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+                <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="background-color: #003366; color: white; padding: 25px; text-align: center;">
+                        <h2 style="margin: 0; font-weight: 300; letter-spacing: 1px;">APPROVAL REQUIRED (LOCAL)</h2>
+                    </div>
+                    <div style="padding: 30px;">
+                        <p style="font-size: 16px;">An opportunity has been created that requires your approval due to price overrides.</p>
+                        
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+                            <h4 style="margin-top: 0; color: #003366; border-bottom: 2px solid #80B040; display: inline-block; padding-bottom: 5px;">Proposal Details</h4>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                <tr><td style="padding: 5px 0; width: 140px;"><strong>Employer:</strong></td><td>${data.contact?.companyName || data.name}</td></tr>
+                                <tr><td style="padding: 5px 0;"><strong>Broker:</strong></td><td>${data.contact?.name || 'N/A'}</td></tr>
+                                <tr><td style="padding: 5px 0;"><strong>Effective Date:</strong></td><td>${data.customFields.find(f => f.key === 'opportunity.effective_date')?.field_value || 'N/A'}</td></tr>
+                                <tr><td style="padding: 5px 0;"><strong>Yearly Value:</strong></td><td>$${data.monetaryValue}</td></tr>
+                            </table>
+                        </div>
+
+                        <h4 style="color: #003366; margin-bottom: 10px;">Product Overrides</h4>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; border: 1px solid #eee;">
+                            <thead style="background-color: #f1f5f9;">
+                                <tr>
+                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Product</th>
+                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Rate</th>
+                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Justification</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${productRows}
+                            </tbody>
+                        </table>
+
+                        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+                            <a href="${baseUrl}/api/approve-opportunity?id=${opportunityId}" 
+                               style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 10px; display: inline-block; min-width: 120px;">
+                                APPROVE
+                            </a>
+                            <a href="${baseUrl}/api/reject-opportunity?id=${opportunityId}" 
+                               style="background-color: #d32f2f; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 10px; display: inline-block; min-width: 120px;">
+                                REJECT
+                            </a>
+                        </div>
+                        
+                        <p style="text-align: center; margin-top: 25px;">
+                            <a href="https://app.gohighlevel.com/v2/location/${data.locationId}/opportunities/list" style="color: #003366; font-size: 13px; text-decoration: underline;">
+                                View Opportunity in GHL Pipeline
+                            </a>
+                        </p>
+                    </div>
+                </div>
+                <div style="max-width: 600px; margin: 0 auto; color: #94a3b8; padding: 20px; text-align: center; font-size: 11px;">
+                    © ${new Date().getFullYear()} NueSynergy. All rights reserved. <br>
+                    This is an automated request from the NueSynergy Sales Intake Portal.
+                </div>
+            </body>
+            </html>
         `;
 
         const payload = {
             type: 'Email',
             contactId: joshCollinsContactId,
             emailFrom: 'sales-intake@nuesynergy.com',
-            subject: `Approval Required: Price Override for ${data.contact?.companyName || data.name}`,
+            subject: `[LOCAL] Action Required: Price Override Approval for ${data.contact?.companyName || data.name}`,
             html: emailBody,
-            message: emailBody.replace(/<[^>]*>?/gm, '') // Plain text fallback
+            message: `Action Required: Price override approval for ${data.name}. Visit the portal to review.`
         };
 
         const response = await axios.post(
@@ -307,7 +353,6 @@ async function sendApprovalEmail(data, opportunityId) {
         return response.data;
     } catch (error) {
         console.error('Error sending approval email:', error.response?.data || error.message);
-        // We don't throw here to avoid failing the whole opportunity creation if the email fails
     }
 }
 
@@ -550,6 +595,94 @@ app.get('/api/opportunities', async (req, res) => {
     } catch (error) {
         console.error('[Opportunities API] Error:', error.message);
         res.status(500).json({ error: 'Failed to fetch opportunities' });
+    }
+});
+
+app.get('/api/approve-opportunity', async (req, res) => {
+    try {
+        const opportunityId = req.query.id;
+        if (!opportunityId) return res.status(400).send('Opportunity ID is required');
+
+        // 1. Update Firestore
+        const snapshot = await admin.firestore().collection('opportunities')
+            .where('ghl.opportunityId', '==', opportunityId)
+            .limit(1)
+            .get();
+
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            await doc.ref.update({
+                'approval.status': 'approved',
+                'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        // 2. Add note to GHL
+        await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`, {
+            body: `**Price override approved by Josh Collins via email.**`
+        }, { headers });
+
+        res.send(`
+            <html>
+                <body style="font-family: sans-serif; text-align: center; padding: 50px; background-color: #f8fafc;">
+                    <div style="background: white; max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <div style="color: #80B040; font-size: 64px; margin-bottom: 20px;">✓</div>
+                        <h2 style="color: #003366; margin-bottom: 15px;">Opportunity Approved</h2>
+                        <p style="color: #64748b; line-height: 1.6;">The price override for this opportunity has been successfully approved. A note has been added to the opportunity in GHL.</p>
+                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                             <p style="font-size: 13px; color: #94a3b8;">You can now close this window.</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+    } catch (error) {
+        console.error('Approval Error:', error.message);
+        res.status(500).send('Error processing approval');
+    }
+});
+
+app.get('/api/reject-opportunity', async (req, res) => {
+    try {
+        const opportunityId = req.query.id;
+        if (!opportunityId) return res.status(400).send('Opportunity ID is required');
+
+        // 1. Update Firestore
+        const snapshot = await admin.firestore().collection('opportunities')
+            .where('ghl.opportunityId', '==', opportunityId)
+            .limit(1)
+            .get();
+
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            await doc.ref.update({
+                'approval.status': 'rejected',
+                'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        // 2. Add note to GHL
+        await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`, {
+            body: `**Price override rejected by Josh Collins via email.**`
+        }, { headers });
+
+        res.send(`
+            <html>
+                <body style="font-family: sans-serif; text-align: center; padding: 50px; background-color: #f8fafc;">
+                    <div style="background: white; max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <div style="color: #d32f2f; font-size: 64px; margin-bottom: 20px;">✕</div>
+                        <h2 style="color: #630000; margin-bottom: 15px;">Opportunity Rejected</h2>
+                        <p style="color: #64748b; line-height: 1.6;">The price override for this opportunity has been rejected. A note has been added to the opportunity in GHL.</p>
+                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                             <p style="font-size: 13px; color: #94a3b8;">You can now close this window.</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+    } catch (error) {
+        console.error('Rejection Error:', error.message);
+        res.status(500).send('Error processing rejection');
     }
 });
 
