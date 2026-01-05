@@ -383,6 +383,17 @@ async function loadOwners() {
         ownerSelect.innerHTML = '<option value="" disabled selected>Error loading owners</option>';
     }
 }
+// Set default dates on load
+function setDefaultDates() {
+    const today = new Date().toISOString().split('T')[0];
+    const proposalDateInput = document.getElementById('proposalDate');
+    const effectiveDateInput = document.getElementById('effectiveDate');
+
+    if (proposalDateInput) proposalDateInput.value = today;
+    // Note: effectiveDate is usually a future date, so we leave it to the user but could default to next month
+}
+setDefaultDates();
+
 loadOwners();
 
 document.getElementById('opportunityForm').addEventListener('submit', async (e) => {
@@ -425,7 +436,11 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
 
     const opportunityName = `${broker} - ${business} - ${formattedDate}`;
 
-    console.log('Generated Opportunity Name:', opportunityName);
+    console.log('Generatred Opportunity Name:', opportunityName);
+
+    // Ensure Opportunity Source fallback
+    const source = data.opportunitySource || 'Direct';
+    console.log('Sending Opportunity Source:', source);
 
     // 2. Prepare Payload for GHL v2
     const payload = {
@@ -434,7 +449,10 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         stageId: CONFIG.stageId,
         status: 'open',
         locationId: CONFIG.locationId,
+        source: source, // Standard GHL Source Field
         assignedTo: data.assignedTo, // Add selected owner
+        assignedToName: document.getElementById('assignedTo').options[document.getElementById('assignedTo').selectedIndex].text, // Add owner name for email
+
         monetaryValue: yearlyTotalEl ? parseFloat(yearlyTotalEl.textContent.replace('$', '')) : 0, // Map to Opportunity Value (Yearly)
         contact: {
             name: data.brokerName,
@@ -444,18 +462,18 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         products: products, // Sent for backend PDF generation and justifications
         brokerAgency: data.brokerAgency, // Passed for Firestore storage
         customFields: [
-            { key: 'opportunity.effective_date', field_value: data.effectiveDate },
-            { key: 'opportunity.proposal_date', field_value: data.proposalDate },
-            { key: 'opportunity.total_employees', field_value: data.totalEmployees },
-            { key: 'opportunity.source', field_value: data.opportunitySource },
-            { key: 'opportunity.current_administrator', field_value: data.currentAdministrator },
-            { key: 'opportunity.ben_admin_system', field_value: data.benAdminSystem },
-            { key: 'opportunity.rfp_products_desired', field_value: JSON.stringify(products) },
-            { key: 'opportunity.monthly_total', field_value: grandTotalEl.textContent.replace('$', '') },
-            { key: 'opportunity.yearly_total', field_value: yearlyTotalEl ? yearlyTotalEl.textContent.replace('$', '') : '0.00' },
-            { key: 'opportunity.postal_code', field_value: data.postalCode || '' },
-            { key: 'opportunity.requires_approval', field_value: hasOverride ? 'Yes' : 'No' },
-            { key: 'opportunity.approver_name', field_value: hasOverride ? 'Josh Collins' : '' }
+            { id: 'TCajUYyGFfxNawfFVHzH', field_value: formattedDate }, // rfp_effective_date: use formatted mm/dd/yyyy
+            { id: 'qDAjtgB8BnOe44mmBxZJ', field_value: data.proposalDate || new Date().toISOString().split('T')[0] }, // proposal_date
+            { id: '1Ns6AFE7tqfjLrSMmlGm', field_value: data.totalEmployees }, // total_employees
+            { id: '4Ft4xkId76QFmogGxQLT', field_value: source }, // opportunity_source
+            { id: 'gG9uknunlZBamXsF5Ynu', field_value: data.currentAdministrator }, // current_administrator
+            { id: 'FbHjdv6IH9saWvWxD9qk', field_value: data.benAdminSystem }, // ben_admin_system
+            { id: 'tkeBnMhHQgLtmTeDazj5', field_value: products.map(p => p.product).join(', ') }, // rfp_products_desired
+            { id: '7R4mvELrwlpcNtwFbeN1', field_value: grandTotalEl.textContent.replace('$', '') }, // monthly_total
+            { id: 'h4RmeiogDVZGhb0DEaia', field_value: yearlyTotalEl ? yearlyTotalEl.textContent.replace('$', '') : '0.00' }, // yearly_total
+            { id: 'RjgwrcO6mdOKu80HsZA2', field_value: data.postalCode || '' }, // postal_code
+            { id: 'wJbGGl9zanGxn392jFw5', field_value: hasOverride ? 'Yes' : 'No' }, // requires_approval
+            { id: 'k29uFeF1SbZ5tIPSn7ro', field_value: hasOverride ? 'Josh Collins' : '' } // approver_name
         ]
     };
 
