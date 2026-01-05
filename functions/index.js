@@ -425,25 +425,25 @@ app.post('/api/create-opportunity', async (req, res) => {
                     agency: data.brokerAgency || ''
                 },
                 details: {
-                    effectiveDate: data.customFields.find(f => f.key === 'opportunity.effective_date')?.field_value,
-                    proposalDate: data.customFields.find(f => f.key === 'opportunity.proposal_date')?.field_value,
-                    totalEmployees: parseInt(data.customFields.find(f => f.key === 'opportunity.total_employees')?.field_value || '0'),
-                    source: data.source || data.customFields.find(f => f.key === 'opportunity.source')?.field_value,
-                    currentAdministrator: data.customFields.find(f => f.key === 'opportunity.current_administrator')?.field_value,
-                    benAdminSystem: data.customFields.find(f => f.key === 'opportunity.ben_admin_system')?.field_value,
-                    postalCode: data.customFields.find(f => f.key === 'opportunity.postal_code')?.field_value || ''
+                    effectiveDate: data.customFields.find(f => f.id === 'TCajUYyGFfxNawfFVHzH' || f.key === 'opportunity.rfp_effective_date')?.field_value,
+                    proposalDate: data.customFields.find(f => f.id === 'qDAjtgB8BnOe44mmBxZJ' || f.key === 'opportunity.proposal_date')?.field_value,
+                    totalEmployees: parseInt(data.customFields.find(f => f.id === '1Ns6AFE7tqfjLrSMmlGm' || f.key === 'opportunity.total_employees')?.field_value || '0'),
+                    source: data.source || data.customFields.find(f => f.id === '4Ft4xkId76QFmogGxQLT' || f.key === 'opportunity.opportunity_source' || f.key === 'opportunity.source')?.field_value,
+                    currentAdministrator: data.customFields.find(f => f.id === 'gG9uknunlZBamXsF5Ynu' || f.key === 'opportunity.current_administrator')?.field_value,
+                    benAdminSystem: data.customFields.find(f => f.id === 'FbHjdv6IH9saWvWxD9qk' || f.key === 'opportunity.ben_admin_system')?.field_value,
+                    postalCode: data.customFields.find(f => f.id === 'RjgwrcO6mdOKu80HsZA2' || f.key === 'opportunity.postal_code')?.field_value || ''
                 },
                 assignment: {
                     assignedToUser: data.assignedTo
                 },
-                products: JSON.parse(data.customFields.find(f => f.key === 'opportunity.rfp_products_desired')?.field_value || '[]'),
+                products: data.products,
                 financials: {
-                    monthlyTotal: parseFloat(data.customFields.find(f => f.key === 'opportunity.monthly_total')?.field_value || '0'),
-                    yearlyTotal: parseFloat(data.customFields.find(f => f.key === 'opportunity.yearly_total')?.field_value || '0')
+                    monthlyTotal: parseFloat(data.customFields.find(f => f.id === '7R4mvELrwlpcNtwFbeN1' || f.key === 'opportunity.monthly_total')?.field_value || '0'),
+                    yearlyTotal: parseFloat(data.customFields.find(f => f.id === 'h4RmeiogDVZGhb0DEaia' || f.key === 'opportunity.yearly_total')?.field_value || '0')
                 },
                 approval: {
-                    requiresApproval: data.customFields.find(f => f.key === 'opportunity.requires_approval')?.field_value === 'Yes',
-                    approverName: data.customFields.find(f => f.key === 'opportunity.approver_name')?.field_value
+                    requiresApproval: data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval')?.field_value === 'Yes',
+                    approverName: data.customFields.find(f => f.id === 'k29uFeF1SbZ5tIPSn7ro' || f.key === 'opportunity.approver_name')?.field_value
                 },
                 ghl: {
                     locationId: locationId,
@@ -471,8 +471,8 @@ app.post('/api/create-opportunity', async (req, res) => {
 
             const pdfData = {
                 businessName: data.contact?.companyName,
-                effectiveDate: data.customFields.find(f => f.key === 'opportunity.effective_date' || f.key === 'rfp_effective_date')?.field_value,
-                proposalDate: data.customFields.find(f => f.key === 'opportunity.proposal_date' || f.key === 'proposal_date')?.field_value,
+                effectiveDate: data.customFields.find(f => f.id === 'TCajUYyGFfxNawfFVHzH' || f.key === 'opportunity.rfp_effective_date')?.field_value,
+                proposalDate: data.customFields.find(f => f.id === 'qDAjtgB8BnOe44mmBxZJ' || f.key === 'opportunity.proposal_date')?.field_value,
                 products: data.products,
                 justifications: justifications
             };

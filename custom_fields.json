@@ -1,0 +1,62 @@
+[dotenv@17.2.3] injecting env (2) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+{
+  "customFields": [
+    {
+      "id": "RjgwrcO6mdOKu80HsZA2",
+      "name": "postal_code",
+      "model": "opportunity",
+      "fieldKey": "opportunity.postal_code",
+      "placeholder": "",
+      "dataType": "TEXT",
+      "position": 1575,
+      "documentType": "field",
+      "parentId": "l0yJ5GUMIZG6omGM9cE2",
+      "locationId": "NFWWwK7qd0rXqtNyOINy",
+      "dateAdded": "2026-01-05T16:22:37.107Z",
+      "standard": false
+    },
+    {
+      "id": "TCajUYyGFfxNawfFVHzH",
+      "name": "RFP_Effective_date",
+      "model": "opportunity",
+      "fieldKey": "opportunity.rfp_effective_date",
+      "placeholder": "",
+      "dataType": "TEXT",
+      "position": 1268.75,
+      "documentType": "field",
+      "parentId": "l0yJ5GUMIZG6omGM9cE2",
+      "locationId": "NFWWwK7qd0rXqtNyOINy",
+      "dateAdded": "2025-05-28T21:31:13.589Z",
+      "standard": false
+    },
+    {
+      "id": "qDAjtgB8BnOe44mmBxZJ",
+      "name": "Proposal Date",
+      "model": "opportunity",
+      "fieldKey": "opportunity.proposal_date",
+      "placeholder": "",
+      "dataType": "DATE",
+      "position": 400,
+      "documentType": "field",
+      "parentId": "l0yJ5GUMIZG6omGM9cE2",
+      "locationId": "NFWWwK7qd0rXqtNyOINy",
+      "dateAdded": "2024-03-29T20:28:27.822Z",
+      "standard": false
+    },
+    {
+      "id": "tkeBnMhHQgLtmTeDazj5",
+      "name": "RFP_products_desired",
+      "model": "opportunity",
+      "fieldKey": "opportunity.rfp_products_desired",
+      "placeholder": "",
+      "dataType": "TEXT",
+      "position": 1525,
+      "documentType": "field",
+      "parentId": "l0yJ5GUMIZG6omGM9cE2",
+      "locationId": "NFWWwK7qd0rXqtNyOINy",
+      "dateAdded": "2025-05-28T21:30:46.780Z",
+      "standard": false
+    }
+  ],
+  "traceId": "453b0a24-5fc7-414a-842e-0b5bf669b8f1"
+}

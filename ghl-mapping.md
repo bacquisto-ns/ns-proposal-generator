@@ -28,20 +28,20 @@ The following fields are mapped to the Opportunity object.
 ## 3. Custom Field Mappings
 These fields must be created as Custom Fields in the GHL sub-account.
 
-| Portal Field | GHL Custom Field Key | Data Type |
-|--------------|----------------------|-----------|
-| Effective Date | `opportunity.effective_date` | Date |
-| Proposal Date | `opportunity.proposal_date` | Date |
-| Total Employees | `opportunity.total_employees` | Number |
-| Opportunity Source | `opportunity.source` | Single Select |
-| Current Administrator | `opportunity.current_administrator` | Text |
-| Ben Admin System | `opportunity.ben_admin_system` | Text |
-| Products Desired | `opportunity.rfp_products_desired` | Large Text / JSON |
-| Monthly Total Fee | `opportunity.monthly_total` | Currency / Number |
-| Yearly Total Fee | `opportunity.yearly_total` | Currency / Number |
-| Postal Code | `opportunity.postal_code` | Text |
-| Requires Approval | `opportunity.requires_approval` | Single Select (Yes/No) |
-| Approver Name | `opportunity.approver_name` | Text |
+| Portal Field | GHL Custom Field Key | Data Type | Notes |
+|--------------|----------------------|-----------|-------|
+| Effective Date | `opportunity.rfp_effective_date` | Date | Changed from `effective_date` |
+| Proposal Date | `opportunity.proposal_date` | Date | Auto-populated with current date |
+| Total Employees | `opportunity.total_employees` | Number | |
+| Opportunity Source | `opportunity.source` | Single Select | |
+| Current Administrator | `opportunity.current_administrator` | Text | |
+| Ben Admin System | `opportunity.ben_admin_system` | Text | |
+| Products Desired | `opportunity.rfp_products_desired` | Text | **Comma separated list** (e.g. "FSA, HSA") |
+| Monthly Total Fee| `opportunity.monthly_total` | Number | |
+| Yearly Total Fee | `opportunity.yearly_total` | Number | |
+| Postal Code | `opportunity.postal_code` | Text | |
+| Requires Approval | `opportunity.requires_approval` | Single Select | Yes/No based on price override |
+| Approver Name | `opportunity.approver_name` | Text | Hardcoded to "Josh Collins" if override |
 
 ## 4. Chatbot Integration Logic
 For the GHL Chatbot (Chat Widget), the following flow is recommended:
