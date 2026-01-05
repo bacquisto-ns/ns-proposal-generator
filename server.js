@@ -262,8 +262,12 @@ async function sendApprovalEmail(data, opportunityId) {
     try {
         const joshCollinsContactId = '357NYkROmrFIMPiAdpUc';
         const productsWithOverride = (data.products || []).filter(p => p.isOverride);
+        console.log(`DEBUG: sendApprovalEmail found ${productsWithOverride.length} overrides.`);
 
-        if (productsWithOverride.length === 0) return;
+        if (productsWithOverride.length === 0) {
+            console.log('DEBUG: No overrides found in sendApprovalEmail, aborting.');
+            return;
+        }
 
         const productRows = productsWithOverride.map(p => `
             <tr>
@@ -548,8 +552,17 @@ app.post('/api/create-opportunity', async (req, res) => {
 
         // 5. Send Approval Email (Independent of PDF success)
         try {
-            if (data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval')?.field_value === 'Yes') {
+            // Debug Logging for Approval
+            const approvalField = data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval');
+            console.log('DEBUG: Approval Field:', JSON.stringify(approvalField, null, 2));
+            console.log('DEBUG: Custom Fields:', JSON.stringify(data.customFields, null, 2));
+            console.log('DEBUG: Products with Override:', JSON.stringify(data.products.filter(p => p.isOverride), null, 2));
+
+            if (approvalField?.field_value === 'Yes') {
+                console.log('DEBUG: Triggering approval email...');
                 await sendApprovalEmail(data, opportunity.id);
+            } else {
+                console.log('DEBUG: Approval condition not met.');
             }
         } catch (emailErr) {
             console.error('Approval Email Failed:', emailErr.message);
