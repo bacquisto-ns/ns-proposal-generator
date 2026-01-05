@@ -339,15 +339,7 @@ td {
     display: block;
 }
 
-.bundling-badge {
-    background: #ecfdf5;
-    color: #059669;
-    padding: 6px 16px;
-    border-radius: 50px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    border: 1px solid #10b981;
-}
+
 
 /* Handled above */
 

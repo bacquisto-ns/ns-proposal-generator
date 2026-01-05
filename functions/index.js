@@ -430,7 +430,8 @@ app.post('/api/create-opportunity', async (req, res) => {
                     totalEmployees: parseInt(data.customFields.find(f => f.key === 'opportunity.total_employees')?.field_value || '0'),
                     source: data.source || data.customFields.find(f => f.key === 'opportunity.source')?.field_value,
                     currentAdministrator: data.customFields.find(f => f.key === 'opportunity.current_administrator')?.field_value,
-                    benAdminSystem: data.customFields.find(f => f.key === 'opportunity.ben_admin_system')?.field_value
+                    benAdminSystem: data.customFields.find(f => f.key === 'opportunity.ben_admin_system')?.field_value,
+                    postalCode: data.customFields.find(f => f.key === 'opportunity.postal_code')?.field_value || ''
                 },
                 assignment: {
                     assignedToUser: data.assignedTo
@@ -481,11 +482,11 @@ app.post('/api/create-opportunity', async (req, res) => {
             const form = new FormData();
             form.append('file', fs.createReadStream(filePath), { filename: fileName, contentType: 'application/pdf', knownLength: stats.size });
 
-            const uploadRes = await axios.post(`https://services.leadconnectorhq.com/locations/${locationId}/custom-files/upload`, form, {
+            const uploadRes = await axios.post(`https://services.leadconnectorhq.com/medias/upload-file`, form, {
                 headers: { ...form.getHeaders(), 'Authorization': `Bearer ${apiKey}`, 'Version': '2021-07-28' }
             });
 
-            await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunity.id}/notes`, {
+            await axios.post(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
                 body: `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${uploadRes.data.url})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`
             }, { headers });
         } catch (automationErr) {

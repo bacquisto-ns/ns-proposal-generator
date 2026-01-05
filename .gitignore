@@ -1,3 +1,6 @@
 node_modules
 .env
+temp/
+*.log
+.firebase/
 

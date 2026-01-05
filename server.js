@@ -9,7 +9,9 @@ require('dotenv').config();
 
 // Initialize Firebase Admin (Auto-detects credentials or emulator)
 if (!admin.apps.length) {
-    admin.initializeApp();
+    admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || 'nueforms-sales-intake-999'
+    });
     admin.firestore().settings({ ignoreUndefinedProperties: true });
 }
 
@@ -207,7 +209,7 @@ async function createProposalPDF(data, outputPath) {
 
 // --- GHL Integration Helper ---
 
-async function uploadFileToGHL(filePath, locationId, opportunityId, justifications = '') {
+async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, justifications = '') {
     try {
         const stats = fs.statSync(filePath);
         const fileName = path.basename(filePath);
@@ -220,7 +222,7 @@ async function uploadFileToGHL(filePath, locationId, opportunityId, justificatio
         });
 
         const uploadResponse = await axios.post(
-            `https://services.leadconnectorhq.com/locations/${locationId}/custom-files/upload`,
+            `https://services.leadconnectorhq.com/medias/upload-file`,
             form,
             {
                 headers: {
@@ -235,7 +237,7 @@ async function uploadFileToGHL(filePath, locationId, opportunityId, justificatio
         console.log('File uploaded to GHL:', fileUrl);
 
         await axios.post(
-            `https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`,
+            `https://services.leadconnectorhq.com/contacts/${contactId}/notes`,
             {
                 body: `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${fileUrl})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`,
             },
@@ -487,7 +489,8 @@ app.post('/api/create-opportunity', async (req, res) => {
                     totalEmployees: parseInt(data.customFields.find(f => f.key === 'opportunity.total_employees')?.field_value || '0'),
                     source: data.source || data.customFields.find(f => f.key === 'opportunity.source')?.field_value,
                     currentAdministrator: data.customFields.find(f => f.key === 'opportunity.current_administrator')?.field_value,
-                    benAdminSystem: data.customFields.find(f => f.key === 'opportunity.ben_admin_system')?.field_value
+                    benAdminSystem: data.customFields.find(f => f.key === 'opportunity.ben_admin_system')?.field_value,
+                    postalCode: data.customFields.find(f => f.key === 'opportunity.postal_code')?.field_value || ''
                 },
                 assignment: {
                     assignedToUser: data.assignedTo
@@ -536,7 +539,7 @@ app.post('/api/create-opportunity', async (req, res) => {
             };
 
             await createProposalPDF(pdfData, filePath);
-            await uploadFileToGHL(filePath, locationId, opportunity.id, justifications);
+            await uploadFileToGHL(filePath, locationId, opportunity.id, contactId, justifications);
         } catch (pdfErr) {
             console.error('Automated PDF Generation/Upload Failed:', pdfErr.message);
         }

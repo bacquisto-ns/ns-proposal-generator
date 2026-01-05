@@ -116,48 +116,57 @@ const yearlyTotalEl = document.getElementById('yearlyTotal');
 const PRODUCTS = [
     {
         name: 'FSA',
+        core: true,
         tiers: [{ min: 1, max: 250, rate: 4.25 }, { min: 251, max: 999, rate: 4.00 }, { min: 1000, max: Infinity, rate: 3.50 }],
         minFee: 50.00
     },
     {
         name: 'HSA',
+        core: true,
         tiers: [{ min: 1, max: 250, rate: 2.25 }, { min: 251, max: 999, rate: 2.15 }, { min: 1000, max: Infinity, rate: 1.85 }],
         minFee: 50.00
     },
     {
         name: 'HRA',
+        core: true,
         tiers: [{ min: 1, max: 250, rate: 4.25 }, { min: 251, max: 999, rate: 4.00 }, { min: 1000, max: Infinity, rate: 3.50 }],
         minFee: 50.00
     },
     {
         name: 'LSA',
+        core: true,
         tiers: [{ min: 1, max: 250, rate: 5.00 }, { min: 251, max: 999, rate: 4.75 }, { min: 1000, max: Infinity, rate: 4.25 }],
         minFee: 50.00
     },
     {
         name: 'COBRA',
+        core: true,
         tiers: [{ min: 1, max: 250, rate: 1.00 }, { min: 251, max: 500, rate: 0.85 }, { min: 501, max: 999, rate: 0.75 }, { min: 1000, max: Infinity, rate: 0.75 }], // custom for 1000+, using floor
         minFee: 50.00
     },
     {
         name: 'Combined Billing - Reconcile',
-        tiers: [{ min: 1, max: 250, rate: 2.00 }, { min: 251, max: 999, rate: 1.75 }, { min: 1000, max: Infinity, rate: 1.35 }],
-        minFee: 200.00
+        tiers: [{ min: 1, max: 250, rate: 2.00, bundled: 1.75 }, { min: 251, max: 999, rate: 1.75, bundled: 1.50 }, { min: 1000, max: Infinity, rate: 1.35, bundled: 1.00 }],
+        minFee: 200.00,
+        bundledMinFee: 150.00
     },
     {
         name: 'Combined Billing - Reconcile & Pay',
-        tiers: [{ min: 1, max: 250, rate: 2.50 }, { min: 251, max: 999, rate: 2.25 }, { min: 1000, max: Infinity, rate: 1.85 }],
-        minFee: 200.00
+        tiers: [{ min: 1, max: 250, rate: 2.50, bundled: 2.25 }, { min: 251, max: 999, rate: 2.25, bundled: 2.00 }, { min: 1000, max: Infinity, rate: 1.85, bundled: 1.50 }],
+        minFee: 200.00,
+        bundledMinFee: 150.00
     },
     {
         name: 'Direct Billing',
-        tiers: [{ min: 1, max: 250, rate: 5.00 }, { min: 251, max: 999, rate: 4.50 }, { min: 1000, max: Infinity, rate: 3.75 }],
-        minFee: 75.00
+        tiers: [{ min: 1, max: 250, rate: 5.00, bundled: 4.75 }, { min: 251, max: 999, rate: 4.50, bundled: 4.25 }, { min: 1000, max: Infinity, rate: 3.75, bundled: 3.50 }],
+        minFee: 75.00,
+        bundledMinFee: 50.00
     },
     {
         name: 'Spousesaver',
-        tiers: [{ min: 1, max: Infinity, rate: 18.00 }],
-        minFee: 150.00
+        tiers: [{ min: 1, max: Infinity, rate: 18.00, bundled: 16.00 }],
+        minFee: 150.00,
+        bundledMinFee: 125.00
     },
     {
         name: 'POP',
@@ -174,9 +183,18 @@ const TIERS = [
     { label: 'Premium Markup', multiplier: 1.5 }
 ];
 
+function isBundled() {
+    const rows = productBody.querySelectorAll('tr');
+    for (const row of rows) {
+        const productSelect = row.querySelector('.product-select');
+        if (!productSelect) continue;
+        const prod = PRODUCTS.find(p => p.name === productSelect.value);
+        if (prod && prod.core) return true;
+    }
+    return false;
+}
 
-
-function calculateRowTotal(row) {
+function calculateRowTotal(row, bundled) {
     const productSelect = row.querySelector('.product-select');
     const tierSelect = row.querySelector('.tier-select');
     const employeesInput = row.querySelector('.employees-input');
@@ -206,7 +224,7 @@ function calculateRowTotal(row) {
 
             // Tiered Logic
             const tierData = product.tiers.find(t => employees >= t.min && employees <= t.max) || product.tiers[0];
-            const baseRate = tierData.rate;
+            const baseRate = (bundled && tierData.bundled) ? tierData.bundled : tierData.rate;
 
             const multiplier = tier ? tier.multiplier : 1;
             rate = baseRate * multiplier;
@@ -216,7 +234,7 @@ function calculateRowTotal(row) {
         let total = rate * (product.isFlatFee ? 1 : employees);
 
         // Min Fee Logic
-        const min = product.minFee;
+        const min = (bundled && product.bundledMinFee) ? product.bundledMinFee : product.minFee;
         if (total > 0 && total < min && !product.isFlatFee) {
             total = min;
         }
@@ -230,11 +248,12 @@ function calculateRowTotal(row) {
 function updateGrandTotal() {
     let total = 0;
     let hasOverride = false;
+    const bundled = isBundled();
 
     // Process all main rows
     const mainRows = productBody.querySelectorAll('.product-main-row');
     mainRows.forEach(row => {
-        total += calculateRowTotal(row);
+        total += calculateRowTotal(row, bundled);
         const checkbox = row.querySelector('.override-checkbox');
         if (checkbox && checkbox.checked) {
             hasOverride = true;
@@ -408,9 +427,6 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
 
     console.log('Generated Opportunity Name:', opportunityName);
 
-    const ownerSelect = document.getElementById('assignedTo');
-    const assignedToName = ownerSelect && ownerSelect.selectedIndex !== -1 ? ownerSelect.options[ownerSelect.selectedIndex].text : 'N/A';
-
     // 2. Prepare Payload for GHL v2
     const payload = {
         name: opportunityName,
@@ -419,7 +435,6 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         status: 'open',
         locationId: CONFIG.locationId,
         assignedTo: data.assignedTo, // Add selected owner
-        assignedToName: assignedToName, // Passed for email
         monetaryValue: yearlyTotalEl ? parseFloat(yearlyTotalEl.textContent.replace('$', '')) : 0, // Map to Opportunity Value (Yearly)
         contact: {
             name: data.brokerName,
@@ -438,6 +453,7 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
             { key: 'opportunity.rfp_products_desired', field_value: JSON.stringify(products) },
             { key: 'opportunity.monthly_total', field_value: grandTotalEl.textContent.replace('$', '') },
             { key: 'opportunity.yearly_total', field_value: yearlyTotalEl ? yearlyTotalEl.textContent.replace('$', '') : '0.00' },
+            { key: 'opportunity.postal_code', field_value: data.postalCode || '' },
             { key: 'opportunity.requires_approval', field_value: hasOverride ? 'Yes' : 'No' },
             { key: 'opportunity.approver_name', field_value: hasOverride ? 'Josh Collins' : '' }
         ]
@@ -468,34 +484,9 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         const successDetail = document.getElementById('successDetail');
 
         if (successMessage && formSection) {
-            if (successDetail) {
-                successDetail.innerHTML = `Opportunity <strong>"${opportunityName}"</strong> created successfully!<br><br>
-                <button id="downloadProposal" class="btn primary-btn" style="padding: 12px 24px; font-size: 0.9rem; width: auto;">DOWNLOAD PRICING PROPOSAL PDF</button>`;
-            }
+            if (successDetail) successDetail.innerHTML = `Opportunity "${opportunityName}" created successfully!<br><button id="downloadProposal" class="btn btn-primary" style="margin-top: 15px;">Download Pricing Proposal PDF</button>`;
             formSection.style.display = 'none';
             successMessage.style.display = 'block';
-
-            // Trigger Confetti
-            if (window.confetti) {
-                const duration = 3 * 1000;
-                const animationEnd = Date.now() + duration;
-                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-                const randomInRange = (min, max) => Math.random() * (max - min) + min;
-
-                const interval = setInterval(function () {
-                    const timeLeft = animationEnd - Date.now();
-
-                    if (timeLeft <= 0) {
-                        return clearInterval(interval);
-                    }
-
-                    const particleCount = 50 * (timeLeft / duration);
-                    // since particles fall down, start a bit higher than random
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-                }, 250);
-            }
 
             document.getElementById('downloadProposal').addEventListener('click', () => {
                 generateProposalPDF({ ...data, opportunityName, products });

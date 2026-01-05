@@ -39,6 +39,7 @@ These fields must be created as Custom Fields in the GHL sub-account.
 | Products Desired | `opportunity.rfp_products_desired` | Large Text / JSON |
 | Monthly Total Fee | `opportunity.monthly_total` | Currency / Number |
 | Yearly Total Fee | `opportunity.yearly_total` | Currency / Number |
+| Postal Code | `opportunity.postal_code` | Text |
 | Requires Approval | `opportunity.requires_approval` | Single Select (Yes/No) |
 | Approver Name | `opportunity.approver_name` | Text |
 
