@@ -107,6 +107,20 @@ label {
     color: var(--primary);
 }
 
+.form-row-split {
+    display: flex !important;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.flex-3 {
+    flex: 3;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
 input,
 select,
 textarea {

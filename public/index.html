@@ -28,15 +28,17 @@
             <form id="opportunityForm">
                 <div class="form-grid">
                     <!-- Opportunity Information -->
-                    <div class="form-group">
-                        <label for="employerName" class="required">Employer Name</label>
-                        <input type="text" id="employerName" name="employerName" placeholder="Enter company name"
-                            required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="postalCode" class="required">Postal Code</label>
-                        <input type="text" id="postalCode" name="postalCode" placeholder="Enter zip code" required>
+                    <!-- Employer Name and Postal Code Split Row -->
+                    <div class="form-group full-width form-row-split">
+                        <div class="flex-3">
+                            <label for="employerName" class="required">Employer Name</label>
+                            <input type="text" id="employerName" name="employerName" placeholder="Enter company name"
+                                required>
+                        </div>
+                        <div class="flex-1">
+                            <label for="postalCode" class="required">Postal Code</label>
+                            <input type="text" id="postalCode" name="postalCode" placeholder="Enter zip code" required>
+                        </div>
                     </div>
 
                     <div class="form-group">
