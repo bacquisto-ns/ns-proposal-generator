@@ -548,7 +548,7 @@ app.post('/api/create-opportunity', async (req, res) => {
 
         // 5. Send Approval Email (Independent of PDF success)
         try {
-            if (data.customFields.find(f => f.key === 'opportunity.requires_approval')?.field_value === 'Yes') {
+            if (data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval')?.field_value === 'Yes') {
                 await sendApprovalEmail(data, opportunity.id);
             }
         } catch (emailErr) {
