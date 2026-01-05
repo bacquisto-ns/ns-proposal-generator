@@ -363,8 +363,11 @@ app.post('/api/create-opportunity', async (req, res) => {
     try {
         const apiKey = ghlApiKey.value();
         const headers = getHeaders(apiKey);
+        console.log('--- Processing New Opportunity Request (Prod) ---');
+        console.log('Request Payload:', JSON.stringify(req.body, null, 2));
         const data = req.body;
         const locationId = data.locationId;
+
 
         // Contact Logic
         let contactId = data.contactId;

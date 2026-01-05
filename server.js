@@ -420,8 +420,10 @@ app.get('/api/contacts', async (req, res) => {
 app.post('/api/create-opportunity', async (req, res) => {
     try {
         console.log('--- Processing New Opportunity Request ---');
+        console.log('Request Payload:', JSON.stringify(req.body, null, 2));
         const data = req.body;
         const locationId = data.locationId;
+
 
         // 1. Create/Find Contact
         let contactId = data.contactId;

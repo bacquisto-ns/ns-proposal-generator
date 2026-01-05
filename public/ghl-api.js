@@ -451,7 +451,11 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         locationId: CONFIG.locationId,
         source: source, // Standard GHL Source Field
         assignedTo: data.assignedTo, // Add selected owner
-        assignedToName: document.getElementById('assignedTo').options[document.getElementById('assignedTo').selectedIndex].text, // Add owner name for email
+        assignedToName: (() => {
+            const el = document.getElementById('assignedTo');
+            return el && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : 'N/A';
+        })(),
+
 
         monetaryValue: yearlyTotalEl ? parseFloat(yearlyTotalEl.textContent.replace('$', '')) : 0, // Map to Opportunity Value (Yearly)
         contact: {
