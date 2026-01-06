@@ -46,7 +46,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-const GHL_API_KEY = process.env.GHL_API_KEY || 'pit-8f3b0ca9-680b-4a08-b639-c43969eabe05';
+const GHL_API_KEY = process.env.GHL_API_KEY || 'GHL API KEY HERE';
 
 const headers = {
     'Authorization': `Bearer ${GHL_API_KEY}`,
