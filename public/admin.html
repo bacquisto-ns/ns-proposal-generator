@@ -34,6 +34,8 @@
                         <tr>
                             <th>Date</th>
                             <th>Employer</th>
+                            <th>Effective</th>
+                            <th>Proposal</th>
                             <th>Broker</th>
                             <th>Products</th>
                             <th>Employees</th>
@@ -53,16 +55,36 @@
 
         <div id="auditLogsView" class="view-section"
             style="display: none; flex: 1; flex-direction: column; min-height: 0;">
+            
+            <!-- Filters & Actions -->
+            <div class="filters-container" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                <select id="filterAction" style="width: auto; padding: 8px;">
+                    <option value="">All Actions</option>
+                    <option value="CREATE">Create</option>
+                    <option value="UPDATE">Update</option>
+                    <option value="DELETE">Delete</option>
+                </select>
+                <select id="filterStatus" style="width: auto; padding: 8px;">
+                    <option value="">All Statuses</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="FAILURE">Failure</option>
+                </select>
+                <input type="text" id="filterResourceId" placeholder="Resource ID..." style="width: auto; flex: 1; min-width: 150px; padding: 8px;">
+                <button id="applyFiltersBtn" class="btn secondary-btn" style="width: auto; margin: 0;">Filter</button>
+                <button id="exportCsvBtn" class="btn secondary-btn" style="width: auto; margin: 0; border-color: var(--primary); color: var(--primary);">Export CSV</button>
+            </div>
+
             <div class="table-container shadow-container" style="flex: 1; overflow-y: auto;">
                 <table id="auditTable">
                     <thead>
                         <tr>
                             <th>Timestamp</th>
+                            <th>Status</th>
+                            <th>Actor</th>
                             <th>Action</th>
                             <th>Resource Type</th>
                             <th>Resource ID</th>
                             <th>Details</th>
-                            <th>User/IP</th>
                         </tr>
                     </thead>
                     <tbody id="auditBody">
@@ -82,6 +104,19 @@
     </div>
 
     <script src="admin.js"></script>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content shadow-container">
+            <div class="modal-header">
+                <h3>Event Details</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="modalJson"></pre>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

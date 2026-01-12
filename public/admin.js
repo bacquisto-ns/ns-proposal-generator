@@ -40,6 +40,8 @@ async function loadOpportunities() {
             tr.innerHTML = `
                 <td>${dateStr}</td>
                 <td><strong>${opp.employerName || 'N/A'}</strong></td>
+                <td>${opp.details?.effectiveDate || '-'}</td>
+                <td>${opp.details?.proposalDate || '-'}</td>
                 <td>
                     ${opp.broker?.name || 'N/A'}<br>
                     <small class="text-muted">${opp.broker?.agency || ''}</small>
@@ -72,10 +74,19 @@ async function loadAuditLogs(direction = 'first') {
     const nextBtn = document.getElementById('nextPageBtn');
     const pageInfo = document.getElementById('pageInfo');
 
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading audit logs...</td></tr>';
+    // Get Filters
+    const action = document.getElementById('filterAction').value;
+    const status = document.getElementById('filterStatus').value;
+    const resourceId = document.getElementById('filterResourceId').value;
+
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading audit logs...</td></tr>';
 
     try {
         let url = `/api/audit-logs?limit=${ITEMS_PER_PAGE}`;
+        if (action) url += `&action=${action}`;
+        if (status) url += `&status=${status}`;
+        if (resourceId) url += `&resourceId=${resourceId}`;
+
         if (direction === 'next' && lastAuditDoc) {
             url += `&startAfter=${lastAuditDoc}`;
             currentPage++;
@@ -83,11 +94,6 @@ async function loadAuditLogs(direction = 'first') {
             currentPage = 1;
             lastAuditDoc = null;
         }
-        // Note: Simple 'prev' logic isn't easily supported with Firestore cursor without tracking history.
-        // For this simple implementation, we'll reset on 'prev' if we don't have a history stack, or just support Next/Reset.
-        // To properly support Previous, we'd need to cache pages or use offsets (expensive).
-        // Let's implement a "Reset/First" and "Next" for now, or use a simple client-side array if generic.
-        // User requested pagination "when applicable". Let's try server-side cursor.
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch data');
@@ -95,7 +101,7 @@ async function loadAuditLogs(direction = 'first') {
         const data = await response.json();
 
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No more audit logs found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No logs found matching criteria.</td></tr>';
             nextBtn.disabled = true;
             if (currentPage > 1) currentPage--; // Revert
             return;
@@ -130,17 +136,32 @@ async function loadAuditLogs(direction = 'first') {
             if (log.action === 'UPDATE') actionClass = 'text-primary';
             if (log.action === 'DELETE') actionClass = 'text-danger';
 
+            let statusClass = 'badge-default';
+            if (log.status === 'SUCCESS') statusClass = 'badge-new';
+            if (log.status === 'FAILURE') statusClass = 'badge-danger';
+
+            const actorName = log.actor?.name || log.metadata?.ip || 'System';
             const detailsJson = JSON.stringify(log.details, null, 2);
 
             tr.innerHTML = `
                 <td>${dateStr}</td>
+                <td><span class="badge ${statusClass}">${log.status || 'SUCCESS'}</span></td>
+                <td><strong>${actorName}</strong></td>
                 <td><span class="${actionClass}" style="font-weight:bold;">${log.action}</span></td>
                 <td>${log.resourceType || 'N/A'}</td>
                 <td><small>${log.resourceId || 'N/A'}</small></td>
-                <td><pre>${detailsJson}</pre></td>
-                <td>${log.metadata?.ip || 'N/A'}</td>
+                <td><button class="view-payload-btn" data-details='${detailsJson.replace(/'/g, "&apos;")}'>View Details</button></td>
             `;
             tbody.appendChild(tr);
+        });
+
+        // Add event listeners to buttons
+        document.querySelectorAll('.view-payload-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const details = btn.getAttribute('data-details');
+                document.getElementById('modalJson').textContent = details;
+                document.getElementById('detailsModal').style.display = 'block';
+            });
         });
 
         // Update UI
@@ -150,12 +171,81 @@ async function loadAuditLogs(direction = 'first') {
 
     } catch (error) {
         console.error('Error loading audit logs:', error);
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading audit logs. Check console.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading audit logs. Check console.</td></tr>';
     }
+}
+
+function exportToCSV() {
+    // Basic CSV export of currently visible data (or fetch all - for now, simple)
+    // To implement "True Export", we should hit an API endpoint that streams all data. 
+    // For this prototype, I'll fetch the first 1000 logs matching filters.
+    const action = document.getElementById('filterAction').value;
+    const status = document.getElementById('filterStatus').value;
+    const resourceId = document.getElementById('filterResourceId').value;
+
+    let url = `/api/audit-logs?limit=1000`;
+    if (action) url += `&action=${action}`;
+    if (status) url += `&status=${status}`;
+    if (resourceId) url += `&resourceId=${resourceId}`;
+
+    fetch(url).then(res => res.json()).then(data => {
+        if (!data || data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        const headers = ['Timestamp', 'Status', 'Actor', 'Action', 'Resource Type', 'Resource ID', 'Details'];
+        const rows = data.map(log => {
+            let dateStr = '';
+            if (log.timestamp && log.timestamp._seconds) {
+                dateStr = new Date(log.timestamp._seconds * 1000).toISOString();
+            }
+            
+            // Escape CSV fields
+            const clean = (text) => `"${String(text || '').replace(/"/g, '""')}"`;
+            
+            return [
+                clean(dateStr),
+                clean(log.status || 'SUCCESS'),
+                clean(log.actor?.name || 'System'),
+                clean(log.action),
+                clean(log.resourceType),
+                clean(log.resourceId),
+                clean(JSON.stringify(log.details))
+            ].join(',');
+        });
+
+        const csvContent = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `audit_logs_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }).catch(err => {
+        console.error('Export failed:', err);
+        alert('Export failed');
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     loadOpportunities();
+
+    // Filter Buttons
+    document.getElementById('applyFiltersBtn')?.addEventListener('click', () => loadAuditLogs('first'));
+    document.getElementById('exportCsvBtn')?.addEventListener('click', exportToCSV);
+
+    // Modal close logic
+    const modal = document.getElementById('detailsModal');
+    const closeBtn = document.querySelector('.close-modal');
+    if (closeBtn) {
+        closeBtn.onclick = () => modal.style.display = 'none';
+    }
+    window.onclick = (event) => {
+        if (event.target == modal) modal.style.display = 'none';
+    };
 
     // Tab Logic
     const tabs = document.querySelectorAll('.tab-btn');

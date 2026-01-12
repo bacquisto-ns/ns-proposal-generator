@@ -16,13 +16,15 @@ if (!admin.apps.length) {
 }
 
 // --- Audit Logging Helper ---
-async function logAudit(action, resourceType, resourceId, details, req = null) {
+async function logAudit(action, resourceType, resourceId, details, req = null, status = 'SUCCESS', actor = null) {
     try {
         const logEntry = {
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
             action: action, // 'CREATE', 'UPDATE', 'DELETE'
             resourceType: resourceType, // 'Opportunity', 'Contact', 'System'
             resourceId: resourceId,
+            status: status, // 'SUCCESS', 'FAILURE', 'WARNING'
+            actor: actor || { name: 'System', email: 'system@internal' }, // { name: '...', email: '...' }
             details: details,
             metadata: {
                 ip: req ? (req.headers['x-forwarded-for'] || req.connection.remoteAddress) : 'system',
@@ -32,7 +34,7 @@ async function logAudit(action, resourceType, resourceId, details, req = null) {
         };
 
         await admin.firestore().collection('audit_logs').add(logEntry);
-        console.log(`[Audit Log] ${action} ${resourceType} (${resourceId}) recorded.`);
+        console.log(`[Audit Log] ${action} ${resourceType} (${resourceId}) - ${status}`);
     } catch (error) {
         console.error('[Audit Log] Failed to record entry:', error.message);
         // We don't throw here to ensure the main flow continues even if logging fails
@@ -115,7 +117,11 @@ async function createProposalPDF(data, outputPath) {
         page16.drawText('About NueSynergy', { x: 50, y: height - 90, size: 12, font: regularFont, color: rgb(1, 1, 1) });
 
         let y = height - 120;
-        const effDate = data.effectiveDate || '-';
+        let effDate = data.effectiveDate || '-';
+        if (effDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const parts = effDate.split('-');
+            effDate = `${parts[1]}-${parts[2]}-${parts[0]}`;
+        }
 
         // Pre-calculate which products are selected for date display logic
         const hasProduct = (type) => (data.products || []).some(p => p.product === type);
@@ -132,7 +138,8 @@ async function createProposalPDF(data, outputPath) {
         const getDate = (type) => (selection[type] || type === 'always') ? effDate : '-';
 
         page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: accentColor });
-        page16.drawText(`GROUP: ${data.businessName || ''}`, { x: 60, y: y - 14, size: 10, font: boldFont, color: textColor });
+        const groupName = data.businessName || data.employerName || '';
+        page16.drawText(`GROUP: ${groupName}`, { x: 60, y: y - 14, size: 10, font: boldFont, color: textColor });
         y -= 25;
 
         // HSA
@@ -439,12 +446,18 @@ app.get('/api/contacts', async (req, res) => {
 
 // Proxy endpoint for GHL Opportunity Creation
 app.post('/api/create-opportunity', async (req, res) => {
+    // 1. Extract Actor (Broker/User)
+    const actor = {
+        name: req.body.contact?.name || 'Unknown Broker',
+        email: req.body.contact?.email || 'N/A',
+        role: 'Broker' // Assumed role for intake form users
+    };
+
     try {
         console.log('--- Processing New Opportunity Request ---');
         console.log('Request Payload:', JSON.stringify(req.body, null, 2));
         const data = req.body;
-        const locationId = data.locationId;
-
+        const locationId = data.locationId; // Fix: Ensure locationId is defined
 
         // 1. Create/Find Contact
         let contactId = data.contactId;
@@ -461,7 +474,7 @@ app.post('/api/create-opportunity', async (req, res) => {
             try {
                 const contactRes = await axios.post('https://services.leadconnectorhq.com/contacts/', contactPayload, { headers });
                 contactId = contactRes.data.contact.id;
-                await logAudit('CREATE', 'Contact', contactId, contactPayload, req);
+                await logAudit('CREATE', 'Contact', contactId, contactPayload, req, 'SUCCESS', actor);
             } catch (err) {
                 if (err.response && (err.response.status === 400 || err.response.status === 409)) {
                     const searchRes = await axios.get(`https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${data.contact.email}`, { headers });
@@ -492,7 +505,13 @@ app.post('/api/create-opportunity', async (req, res) => {
         const opportunity = oppRes.data.opportunity || oppRes.data;
         console.log('Opportunity Created Successfully!');
 
-        await logAudit('CREATE', 'Opportunity', opportunity.id, opportunityPayload, req);
+        // Log Opportunity Creation
+        await logAudit('CREATE', 'Opportunity', opportunity.id, {
+            name: data.name,
+            monetaryValue: data.monetaryValue,
+            pipelineId: data.pipelineId,
+            status: data.status
+        }, req, 'SUCCESS', actor);
 
         // 3. Dual-Write to Firestore
         try {
@@ -589,6 +608,12 @@ app.post('/api/create-opportunity', async (req, res) => {
 
     } catch (error) {
         console.error('ERROR:', error.response ? JSON.stringify(error.response.data) : error.message);
+
+        await logAudit('CREATE', 'Opportunity', 'FAILED', {
+            error: error.message,
+            payload: req.body
+        }, req, 'FAILURE', actor);
+
         res.status(error.response ? error.response.status : 500).json({
             error: 'Failed to process request',
             details: error.response ? error.response.data : error.message
@@ -731,10 +756,19 @@ app.get('/api/audit-logs', async (req, res) => {
         console.log('[Audit Logs API] Fetching audit logs...');
         const limit = parseInt(req.query.limit) || 50;
         const startAfter = req.query.startAfter;
+        const action = req.query.action;
+        const status = req.query.status;
+        const resourceId = req.query.resourceId;
 
-        let query = admin.firestore().collection('audit_logs')
-            .orderBy('timestamp', 'desc')
-            .limit(limit);
+        let query = admin.firestore().collection('audit_logs');
+
+        // Apply filters
+        if (action) query = query.where('action', '==', action);
+        if (status) query = query.where('status', '==', status);
+        if (resourceId) query = query.where('resourceId', '==', resourceId);
+
+        // Apply ordering and limits
+        query = query.orderBy('timestamp', 'desc').limit(limit);
 
         if (startAfter) {
             // Assume startAfter is seconds (timestamp)

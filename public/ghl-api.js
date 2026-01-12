@@ -519,7 +519,14 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
             successMessage.style.display = 'block';
 
             document.getElementById('downloadProposal').addEventListener('click', () => {
-                generateProposalPDF({ ...data, opportunityName, products });
+                generateProposalPDF({
+                    ...data,
+                    businessName: data.employerName,
+                    effectiveDate: formattedEffectiveDate,
+                    proposalDate: formattedProposalDate,
+                    opportunityName,
+                    products
+                });
             });
         } else {
             alert('Opportunity Created Successfully!\nName: ' + opportunityName);
