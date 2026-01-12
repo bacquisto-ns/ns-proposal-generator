@@ -436,7 +436,7 @@ app.post('/api/create-opportunity', async (req, res) => {
         try {
             console.log('Saving to Firestore...');
             const firestoreData = {
-                employerName: data.contact?.companyName || data.name,
+                employerName: data.employerName || data.contact?.companyName || data.name,
                 status: 'new',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 broker: {
@@ -482,7 +482,7 @@ app.post('/api/create-opportunity', async (req, res) => {
 
         // Automation
         try {
-            const fileName = `Proposal_${Date.now()}.pdf`;
+            const fileName = `Proposal_${data.employerName || 'Group'}_${Date.now()}.pdf`;
             const filePath = path.join(os.tmpdir(), fileName);
             const justifications = (data.products || [])
                 .filter(p => p.isOverride && p.justification)
@@ -490,7 +490,7 @@ app.post('/api/create-opportunity', async (req, res) => {
                 .join('\n');
 
             const pdfData = {
-                businessName: data.contact?.companyName,
+                businessName: data.employerName || data.contact?.companyName || 'N/A',
                 effectiveDate: data.customFields.find(f => f.id === 'TCajUYyGFfxNawfFVHzH' || f.key === 'opportunity.rfp_effective_date')?.field_value,
                 proposalDate: data.customFields.find(f => f.id === 'qDAjtgB8BnOe44mmBxZJ' || f.key === 'opportunity.proposal_date')?.field_value,
                 products: data.products,

@@ -7,7 +7,7 @@ const data = {
     monetaryValue: '1250.00',
     locationId: 'NFWWwK7qd0rXqtNyOINy',
     customFields: [
-        { key: 'opportunity.effective_date', field_value: '2026-01-01' }
+        { key: 'opportunity.effective_date', field_value: '01-01-2026' }
     ],
     products: [
         { product: 'FSA', rate: '3.50', isOverride: true, justification: 'Key client discount' },

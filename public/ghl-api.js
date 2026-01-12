@@ -430,13 +430,20 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
     const broker = data.brokerAgency || data.brokerName || data.opportunitySource || 'Direct';
     const business = data.employerName;
 
-    // Format date from YYYY-MM-DD to MM/DD/YYYY for a cleaner name
-    const dateParts = data.effectiveDate.split('-');
-    const formattedDate = `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`;
+    // Helper to format YYYY-MM-DD to MM-DD-YYYY
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        return `${parts[1]}-${parts[2]}-${parts[0]}`;
+    };
 
-    const opportunityName = `${broker} - ${business} - ${formattedDate}`;
+    const formattedEffectiveDate = formatDate(data.effectiveDate);
+    const formattedProposalDate = formatDate(data.proposalDate) || formatDate(new Date().toISOString().split('T')[0]);
 
-    console.log('Generatred Opportunity Name:', opportunityName);
+    const opportunityName = `${broker} - ${business} - ${formattedEffectiveDate}`;
+
+    console.log('Generated Opportunity Name:', opportunityName);
 
     // Ensure Opportunity Source fallback
     const source = data.opportunitySource || 'Direct';
@@ -445,6 +452,7 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
     // 2. Prepare Payload for GHL v2
     const payload = {
         name: opportunityName,
+        employerName: business, // Pass business name explicitly for PDF generation
         pipelineId: CONFIG.pipelineId,
         stageId: CONFIG.stageId,
         status: 'open',
@@ -466,8 +474,8 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         products: products, // Sent for backend PDF generation and justifications
         brokerAgency: data.brokerAgency, // Passed for Firestore storage
         customFields: [
-            { id: 'TCajUYyGFfxNawfFVHzH', field_value: formattedDate }, // rfp_effective_date: use formatted mm/dd/yyyy
-            { id: 'qDAjtgB8BnOe44mmBxZJ', field_value: data.proposalDate || new Date().toISOString().split('T')[0] }, // proposal_date
+            { id: 'TCajUYyGFfxNawfFVHzH', field_value: formattedEffectiveDate }, // rfp_effective_date: use formatted mm-dd-yyyy
+            { id: 'qDAjtgB8BnOe44mmBxZJ', field_value: formattedProposalDate }, // proposal_date: use formatted mm-dd-yyyy
             { id: '1Ns6AFE7tqfjLrSMmlGm', field_value: data.totalEmployees }, // total_employees
             { id: '4Ft4xkId76QFmogGxQLT', field_value: source }, // opportunity_source
             { id: 'gG9uknunlZBamXsF5Ynu', field_value: data.currentAdministrator }, // current_administrator

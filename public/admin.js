@@ -18,10 +18,17 @@ async function loadOpportunities() {
 
             // Date Formatting
             let dateStr = 'N/A';
+            const formatDateObj = (d) => {
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${month}-${day}-${year}`;
+            };
+
             if (opp.createdAt && opp.createdAt._seconds) {
-                dateStr = new Date(opp.createdAt._seconds * 1000).toLocaleDateString();
+                dateStr = formatDateObj(new Date(opp.createdAt._seconds * 1000));
             } else if (opp.createdAt) {
-                dateStr = new Date(opp.createdAt).toLocaleDateString();
+                dateStr = formatDateObj(new Date(opp.createdAt));
             }
 
             // Product Summary
@@ -97,6 +104,15 @@ async function loadAuditLogs(direction = 'first') {
         // Update cursor
         lastAuditDoc = data[data.length - 1].timestamp?._seconds || data[data.length - 1].id;
 
+        // Helper for consistent formatting
+        const formatDateTime = (d) => {
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const year = d.getFullYear();
+            const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return `${month}-${day}-${year} ${time}`;
+        };
+
         // Render
         tbody.innerHTML = '';
         data.forEach(log => {
@@ -104,9 +120,9 @@ async function loadAuditLogs(direction = 'first') {
 
             let dateStr = 'N/A';
             if (log.timestamp && log.timestamp._seconds) {
-                dateStr = new Date(log.timestamp._seconds * 1000).toLocaleString();
+                dateStr = formatDateTime(new Date(log.timestamp._seconds * 1000));
             } else if (log.timestamp) {
-                dateStr = new Date(log.timestamp).toLocaleString();
+                dateStr = formatDateTime(new Date(log.timestamp));
             }
 
             let actionClass = 'text-muted';
