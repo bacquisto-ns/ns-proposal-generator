@@ -125,52 +125,67 @@ async function createProposalPDF(data, outputPath) {
         let y = height - 120;
         const effDate = data.effectiveDate || '-';
 
+        // Pre-calculate which products are selected for date display logic
+        const hasProduct = (type) => (data.products || []).some(p => p.product === type);
+        const selection = {
+            hsa: hasProduct('HSA'),
+            fsa: hasProduct('FSA'),
+            hra: hasProduct('HRA'),
+            lsa: hasProduct('LSA'),
+            cobra: hasProduct('COBRA'),
+            direct: hasProduct('Direct Billing'),
+            pop: hasProduct('POP')
+        };
+
+        const getDate = (type) => (selection[type] || type === 'always') ? effDate : '-';
+
         page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: accentColor });
         page16.drawText(`GROUP: ${data.businessName || ''}`, { x: 60, y: y - 14, size: 10, font: boldFont, color: textColor });
         y -= 25;
 
         // HSA
         y = drawSectionHeader(page16, y, 'HSA Plans');
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), effDate);
-        y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', effDate, true);
-        y = drawRow(page16, y, 'Annual Renewal (AFTER YEAR 1)', '-', effDate, true);
-        y = drawRow(page16, y, 'Monthly Minimum', '-', effDate, true);
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getDate('hsa'));
+        y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', getDate('hsa'), true);
+        y = drawRow(page16, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('hsa'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', '-', getDate('hsa'), true);
         y -= 10;
 
         // FSA
         y = drawSectionHeader(page16, y, 'Section 125, FSA Plans');
-        y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), effDate);
-        y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', effDate, true);
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), effDate, true);
-        y = drawRow(page16, y, 'Monthly Minimum', '-', effDate, true);
+        y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getDate('fsa'));
+        y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getDate('fsa'), true);
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), getDate('fsa'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', '-', getDate('fsa'), true);
         y -= 10;
 
         // HRA
         y = drawSectionHeader(page16, y, 'Section 105, HRA Plans');
-        y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), effDate);
-        y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', effDate, true);
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), effDate, true);
-        y = drawRow(page16, y, 'Monthly Minimum', '-', effDate, true);
+        y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getDate('hra'));
+        y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('hra'), true);
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), getDate('hra'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', '-', getDate('hra'), true);
         y -= 10;
 
         // Miscellaneous
         y = drawSectionHeader(page16, y, 'Miscellaneous Services');
-        y = drawRow(page16, y, 'eClaims Manager Per Participant, Monthly', '-', effDate);
-        y = drawRow(page16, y, 'NueSynergy Smart Mobile App', 'Included', effDate);
-        y = drawRow(page16, y, 'Smart Debit Card Setup & Administration Per Participant, Monthly', '-', effDate);
+        const miscDate = (selection.hsa || selection.fsa || selection.hra || selection.lsa) ? effDate : '-';
+        y = drawRow(page16, y, 'eClaims Manager Per Participant, Monthly', '-', miscDate);
+        y = drawRow(page16, y, 'NueSynergy Smart Mobile App', 'Included', miscDate);
+        y = drawRow(page16, y, 'Smart Debit Card Setup & Administration Per Participant, Monthly', '-', miscDate);
         y -= 10;
 
         // LSA
         y = drawSectionHeader(page16, y, 'LSA Plans');
-        y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), effDate);
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), effDate, true);
+        y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), getDate('lsa'));
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), getDate('lsa'), true);
         y -= 10;
 
         // COBRA
         y = drawSectionHeader(page16, y, 'COBRAcare+ Administration');
-        y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), effDate);
-        y = drawRow(page16, y, 'Current COBRA Continuation', '-', effDate, true);
-        y = drawRow(page16, y, 'Qualifying Event Notice', '-', effDate, true);
+        y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getDate('cobra'));
+        y = drawRow(page16, y, 'Current COBRA Continuation', '-', getDate('cobra'), true);
+        y = drawRow(page16, y, 'Qualifying Event Notice', '-', getDate('cobra'), true);
 
         // Page 16 Footer
         page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
@@ -185,23 +200,25 @@ async function createProposalPDF(data, outputPath) {
 
         // Direct Bill
         y = drawSectionHeader(page17, y, 'Direct Billing');
-        y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), effDate);
-        y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', effDate, true);
-        y = drawRow(page17, y, 'Per Direct Bill Participant Per Month', findRate('Direct'), effDate, true);
-        y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', '-', effDate, true);
+        y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), getDate('direct'));
+        y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('direct'), true);
+        y = drawRow(page17, y, 'Per Direct Bill Participant Per Month', findRate('Direct'), getDate('direct'), true);
+        y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', '-', getDate('direct'), true);
         y -= 10;
 
         // POP
         y = drawSectionHeader(page17, y, 'Section 125, Premium Only Plan (POP)');
-        y = drawRow(page17, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), effDate);
-        y = drawRow(page17, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', effDate, true);
+        y = drawRow(page17, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), getDate('pop'));
+        y = drawRow(page17, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('pop'), true);
         y -= 10;
 
         // Files
         y = drawSectionHeader(page17, y, 'File Implementation and Processing');
-        y = drawRow(page17, y, 'Enrollment/Eligibility File (New Enrollment and Terminations)', '-', effDate);
-        y = drawRow(page17, y, 'Payroll/Contribution File', '-', effDate);
-        y = drawRow(page17, y, 'COBRA Initial Notices', '-', effDate);
+        const anyProduct = Object.values(selection).some(v => v);
+        const fileDate = anyProduct ? effDate : '-';
+        y = drawRow(page17, y, 'Enrollment/Eligibility File (New Enrollment and Terminations)', '-', fileDate);
+        y = drawRow(page17, y, 'Payroll/Contribution File', '-', fileDate);
+        y = drawRow(page17, y, 'COBRA Initial Notices', '-', selection.cobra ? effDate : '-');
 
         // Page 17 Footer
         page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
