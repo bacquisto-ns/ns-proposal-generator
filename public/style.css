@@ -235,49 +235,57 @@ table {
     margin-bottom: 20px;
 }
 
+/* Product */
 th:nth-child(1),
 td:nth-child(1) {
-    width: 25%;
-}
-
-/* Product */
-th:nth-child(2),
-td:nth-child(2) {
-    width: 25%;
+    width: 22%;
 }
 
 /* Tier */
-th:nth-child(3),
-td:nth-child(3) {
-    width: 10%;
-    text-align: center;
+th:nth-child(2),
+td:nth-child(2) {
+    width: 22%;
 }
 
 /* Employees */
-th:nth-child(4),
-td:nth-child(4) {
-    width: 10%;
+th:nth-child(3),
+td:nth-child(3) {
+    width: 8%;
     text-align: center;
 }
 
 /* Rate */
-th:nth-child(5),
-td:nth-child(5) {
-    width: 10%;
+th:nth-child(4),
+td:nth-child(4) {
+    width: 15%;
     text-align: center;
 }
 
 /* Override */
+th:nth-child(5),
+td:nth-child(5) {
+    width: 8%;
+    text-align: center;
+}
+
+/* Waive Min */
 th:nth-child(6),
 td:nth-child(6) {
-    width: 15%;
-    text-align: right;
+    width: 10%;
+    text-align: center;
 }
 
 /* Total */
 th:nth-child(7),
 td:nth-child(7) {
-    width: 5%;
+    width: 12%;
+    text-align: right;
+}
+
+/* Remove column */
+th:nth-child(8),
+td:nth-child(8) {
+    width: 3%;
     text-align: center;
 }
 
@@ -300,7 +308,7 @@ td {
 
 #productTable select,
 #productTable input {
-    padding: 8px 12px;
+    padding: 8px 6px; /* Reduced horizontal padding */
     font-size: 0.9rem;
     border-radius: 8px;
     width: 100%;
@@ -311,6 +319,7 @@ td {
     background-color: #f8fafc;
     border-color: transparent;
     cursor: default;
+    text-align: center; /* Center the rate text */
 }
 
 .row-total {
