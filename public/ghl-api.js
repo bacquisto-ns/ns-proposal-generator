@@ -428,7 +428,12 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         const nextRow = row.nextElementSibling;
         const justification = (isOverride && nextRow) ? nextRow.querySelector('.justification-input').value : '';
 
-        products.push({ product, tier, employees, rate, isOverride, waivedMin, justification });
+        // Added Min Fee calculation for PDF consistency
+        const prodData = PRODUCTS.find(p => p.name === product);
+        const bundled = isBundled();
+        const minFee = prodData ? ((bundled && prodData.bundledMinFee) ? prodData.bundledMinFee : prodData.minFee) : 0;
+
+        products.push({ product, tier, employees, rate, isOverride, waivedMin, justification, minFee });
         if (isOverride) hasOverride = true;
     });
 

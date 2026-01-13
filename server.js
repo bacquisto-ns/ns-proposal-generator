@@ -109,7 +109,8 @@ async function createProposalPDF(data, outputPath) {
         const findMinFee = (search) => {
             const prod = (data.products || []).find(p => p.product.toLowerCase().includes(search.toLowerCase()));
             if (!prod) return '-';
-            return prod.waivedMin ? 'Waived' : '-';
+            if (prod.waivedMin) return 'Waived';
+            return prod.minFee ? `$${parseFloat(prod.minFee).toFixed(2)}` : '-';
         };
 
         // --- PAGE 16 ---
