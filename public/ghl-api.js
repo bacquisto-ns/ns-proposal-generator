@@ -141,7 +141,7 @@ const PRODUCTS = [
     {
         name: 'COBRA',
         core: true,
-        tiers: [{ min: 1, max: 250, rate: 1.00 }, { min: 251, max: 500, rate: 0.85 }, { min: 501, max: 999, rate: 0.75 }, { min: 1000, max: Infinity, rate: 0.75 }], // custom for 1000+, using floor
+        tiers: [{ min: 1, max: 250, rate: 1.00 }, { min: 251, max: 500, rate: 0.85 }, { min: 501, max: 999, rate: 0.75 }, { min: 1000, max: Infinity, rate: 0.75 }],
         minFee: 50.00
     },
     {
@@ -153,8 +153,8 @@ const PRODUCTS = [
     {
         name: 'Combined Billing - Reconcile & Pay',
         tiers: [{ min: 1, max: 250, rate: 2.50, bundled: 2.25 }, { min: 251, max: 999, rate: 2.25, bundled: 2.00 }, { min: 1000, max: Infinity, rate: 1.85, bundled: 1.50 }],
-        minFee: 200.00,
-        bundledMinFee: 150.00
+        minFee: 250.00, // Updated from 200.00 based on JSON
+        bundledMinFee: 200.00  // Updated from 150.00 based on JSON
     },
     {
         name: 'Direct Billing',
@@ -200,6 +200,7 @@ function calculateRowTotal(row, bundled) {
     const employeesInput = row.querySelector('.employees-input');
     const rateInput = row.querySelector('.rate-input');
     const overrideCheckbox = row.querySelector('.override-checkbox');
+    const waiveMinCheckbox = row.querySelector('.waive-min-checkbox');
     const totalCell = row.querySelector('.row-total');
     const justificationRow = row.nextElementSibling;
     if (justificationRow && justificationRow.classList.contains('override-justification-row')) {
@@ -235,7 +236,9 @@ function calculateRowTotal(row, bundled) {
 
         // Min Fee Logic
         const min = (bundled && product.bundledMinFee) ? product.bundledMinFee : product.minFee;
-        if (total > 0 && total < min && !product.isFlatFee) {
+        const waiveMin = waiveMinCheckbox ? waiveMinCheckbox.checked : false;
+
+        if (total > 0 && total < min && !product.isFlatFee && !waiveMin) {
             total = min;
         }
 
@@ -286,6 +289,7 @@ function createProductRow() {
     const employeesInput = mainRow.querySelector('.employees-input');
     const rateInput = mainRow.querySelector('.rate-input');
     const overrideCheckbox = mainRow.querySelector('.override-checkbox');
+    const waiveMinCheckbox = mainRow.querySelector('.waive-min-checkbox');
     const removeBtn = mainRow.querySelector('.remove-btn');
     const justificationInput = justificationRow.querySelector('.justification-input');
 
@@ -313,6 +317,7 @@ function createProductRow() {
     if (employeesInput) employeesInput.addEventListener('input', () => updateGrandTotal());
     if (rateInput) rateInput.addEventListener('input', () => updateGrandTotal());
     if (overrideCheckbox) overrideCheckbox.addEventListener('change', () => updateGrandTotal());
+    if (waiveMinCheckbox) waiveMinCheckbox.addEventListener('change', () => updateGrandTotal());
     if (justificationInput) justificationInput.addEventListener('input', () => { });
 
     if (removeBtn) {
@@ -419,10 +424,11 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         const employees = row.querySelector('.employees-input').value;
         const rate = row.querySelector('.rate-input').value;
         const isOverride = row.querySelector('.override-checkbox').checked;
+        const waivedMin = row.querySelector('.waive-min-checkbox').checked;
         const nextRow = row.nextElementSibling;
         const justification = (isOverride && nextRow) ? nextRow.querySelector('.justification-input').value : '';
 
-        products.push({ product, tier, employees, rate, isOverride, justification });
+        products.push({ product, tier, employees, rate, isOverride, waivedMin, justification });
         if (isOverride) hasOverride = true;
     });
 

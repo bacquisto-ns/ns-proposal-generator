@@ -102,8 +102,14 @@ async function createProposalPDF(data, outputPath) {
         const findRate = (search) => {
             const prod = (data.products || []).find(p => p.product.toLowerCase().includes(search.toLowerCase()));
             if (!prod) return '-';
-            const rateStr = `$${parseFloat(prod.rate).toFixed(2)}`;
+            const rateStr = isNaN(parseFloat(prod.rate)) ? prod.rate : `$${parseFloat(prod.rate).toFixed(2)}`;
             return prod.isOverride ? `${rateStr}*` : rateStr;
+        };
+
+        const findMinFee = (search) => {
+            const prod = (data.products || []).find(p => p.product.toLowerCase().includes(search.toLowerCase()));
+            if (!prod) return '-';
+            return prod.waivedMin ? 'Waived' : '-';
         };
 
         // --- PAGE 16 ---
@@ -147,7 +153,7 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getDate('hsa'));
         y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', getDate('hsa'), true);
         y = drawRow(page16, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('hsa'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', '-', getDate('hsa'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HSA'), getDate('hsa'), true);
         y -= 10;
 
         // FSA
@@ -155,7 +161,7 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getDate('fsa'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getDate('fsa'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), getDate('fsa'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', '-', getDate('fsa'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('FSA'), getDate('fsa'), true);
         y -= 10;
 
         // HRA
@@ -163,7 +169,7 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getDate('hra'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('hra'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), getDate('hra'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', '-', getDate('hra'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HRA'), getDate('hra'), true);
         y -= 10;
 
         // Miscellaneous
@@ -202,7 +208,7 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), getDate('direct'));
         y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('direct'), true);
         y = drawRow(page17, y, 'Per Direct Bill Participant Per Month', findRate('Direct'), getDate('direct'), true);
-        y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', '-', getDate('direct'), true);
+        y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', findMinFee('Direct'), getDate('direct'), true);
         y -= 10;
 
         // POP
