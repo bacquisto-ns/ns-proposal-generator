@@ -7,6 +7,17 @@ const CONFIG = {
     stageId: '85aa3281-f8ad-4fa4-9ad5-19c33d530080' // RFP From Broker
 };
 
+// HTML escape helper to prevent XSS
+const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
 // --- Broker Lookup Management ---
 function initBrokerLookup() {
     const brokerInput = document.getElementById('brokerName');
@@ -60,9 +71,9 @@ function displayLookupResults(contacts, container, input, emailInput, agencyInpu
         const agency = contact.companyName || '';
 
         item.innerHTML = `
-            <strong>${fullName}</strong>
-            <span class="lookup-email">${email}</span>
-            ${agency ? `<span class="lookup-agency">${agency}</span>` : ''}
+            <strong>${escapeHtml(fullName)}</strong>
+            <span class="lookup-email">${escapeHtml(email)}</span>
+            ${agency ? `<span class="lookup-agency">${escapeHtml(agency)}</span>` : ''}
         `;
 
         item.addEventListener('click', () => {
@@ -83,7 +94,7 @@ function displayLookupResults(contacts, container, input, emailInput, agencyInpu
         createNewItem.innerHTML = `
             <div class="create-new-content">
                 <span class="plus-icon">+</span>
-                <strong>${currentQuery} (Create New Contact)</strong>
+                <strong>${escapeHtml(currentQuery)} (Create New Contact)</strong>
             </div>
         `;
 

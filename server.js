@@ -48,12 +48,121 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-const GHL_API_KEY = process.env.GHL_API_KEY || 'GHL API KEY HERE';
+const GHL_API_KEY = process.env.GHL_API_KEY;
+if (!GHL_API_KEY) {
+    console.error('FATAL: GHL_API_KEY environment variable is required');
+    process.exit(1);
+}
 
 const headers = {
     'Authorization': `Bearer ${GHL_API_KEY}`,
     'Version': '2021-07-28',
     'Content-Type': 'application/json'
+};
+
+// --- Input Validation & Sanitization Helpers ---
+const sanitizeString = (str, maxLength = 500) => {
+    if (typeof str !== 'string') return '';
+    return str
+        .slice(0, maxLength)
+        .replace(/[<>]/g, '') // Remove < > to prevent HTML injection
+        .trim();
+};
+
+const sanitizeEmail = (email) => {
+    if (typeof email !== 'string') return '';
+    const sanitized = email.toLowerCase().trim().slice(0, 254);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(sanitized) ? sanitized : '';
+};
+
+const sanitizeNumber = (val, defaultVal = 0) => {
+    const num = parseFloat(val);
+    return isNaN(num) ? defaultVal : num;
+};
+
+const validateOpportunityInput = (data) => {
+    const errors = [];
+
+    // Required fields
+    if (!data.locationId || typeof data.locationId !== 'string') {
+        errors.push('locationId is required');
+    }
+    if (!data.pipelineId || typeof data.pipelineId !== 'string') {
+        errors.push('pipelineId is required');
+    }
+    if (!data.stageId || typeof data.stageId !== 'string') {
+        errors.push('stageId is required');
+    }
+
+    // Contact validation
+    if (data.contact) {
+        if (!data.contact.email || !sanitizeEmail(data.contact.email)) {
+            errors.push('Valid contact email is required');
+        }
+        if (!data.contact.name && !data.contact.firstName) {
+            errors.push('Contact name is required');
+        }
+    } else if (!data.contactId) {
+        errors.push('Either contact or contactId is required');
+    }
+
+    // Products validation
+    if (data.products && !Array.isArray(data.products)) {
+        errors.push('products must be an array');
+    }
+
+    // Custom fields validation
+    if (data.customFields && !Array.isArray(data.customFields)) {
+        errors.push('customFields must be an array');
+    }
+
+    return errors;
+};
+
+const sanitizeOpportunityData = (data) => {
+    const sanitized = { ...data };
+
+    // Sanitize basic fields
+    sanitized.name = sanitizeString(data.name, 200);
+    sanitized.source = sanitizeString(data.source, 100);
+    sanitized.employerName = sanitizeString(data.employerName, 200);
+    sanitized.brokerAgency = sanitizeString(data.brokerAgency, 200);
+    sanitized.monetaryValue = sanitizeNumber(data.monetaryValue);
+
+    // Sanitize contact
+    if (data.contact) {
+        sanitized.contact = {
+            name: sanitizeString(data.contact.name, 100),
+            firstName: sanitizeString(data.contact.firstName, 50),
+            lastName: sanitizeString(data.contact.lastName, 50),
+            email: sanitizeEmail(data.contact.email),
+            companyName: sanitizeString(data.contact.companyName, 200)
+        };
+    }
+
+    // Sanitize products
+    if (Array.isArray(data.products)) {
+        sanitized.products = data.products.slice(0, 50).map(p => ({
+            product: sanitizeString(p.product, 100),
+            rate: sanitizeString(String(p.rate || ''), 50),
+            effectiveDate: sanitizeString(p.effectiveDate, 20),
+            isOverride: Boolean(p.isOverride),
+            justification: sanitizeString(p.justification, 500),
+            waiveMin: Boolean(p.waiveMin)
+        }));
+    }
+
+    // Sanitize custom fields
+    if (Array.isArray(data.customFields)) {
+        sanitized.customFields = data.customFields.slice(0, 100).map(f => ({
+            id: sanitizeString(f.id, 50),
+            key: sanitizeString(f.key, 100),
+            field_value: sanitizeString(String(f.field_value || ''), 500)
+        }));
+    }
+
+    return sanitized;
 };
 
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
@@ -453,43 +562,89 @@ app.get('/api/contacts', async (req, res) => {
 
 // Proxy endpoint for GHL Opportunity Creation
 app.post('/api/create-opportunity', async (req, res) => {
-    // 1. Extract Actor (Broker/User)
+    // Input Validation
+    const validationErrors = validateOpportunityInput(req.body);
+    if (validationErrors.length > 0) {
+        console.error('Validation errors:', validationErrors);
+        return res.status(400).json({
+            error: 'Validation failed',
+            details: validationErrors
+        });
+    }
+
+    // Sanitize all input data
+    const data = sanitizeOpportunityData(req.body);
+    const locationId = data.locationId;
+
+    // Extract Actor (Broker/User) from sanitized data
     const actor = {
-        name: req.body.contact?.name || 'Unknown Broker',
-        email: req.body.contact?.email || 'N/A',
-        role: 'Broker' // Assumed role for intake form users
+        name: data.contact?.name || 'Unknown Broker',
+        email: data.contact?.email || 'N/A',
+        role: 'Broker'
     };
 
     try {
         console.log('--- Processing New Opportunity Request ---');
-        console.log('Request Payload:', JSON.stringify(req.body, null, 2));
-        const data = req.body;
-        const locationId = data.locationId; // Fix: Ensure locationId is defined
+        console.log('Request Payload (sanitized):', JSON.stringify(data, null, 2));
 
-        // 1. Create/Find Contact
+        // 1. Find or Create Contact (check-then-create pattern to avoid race conditions)
         let contactId = data.contactId;
         if (!contactId && data.contact) {
-            console.log('Creating/Finding Contact...');
-            const contactPayload = {
-                firstName: data.contact.firstName || data.contact.name.split(' ')[0],
-                lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
-                email: data.contact.email,
-                companyName: data.contact.companyName,
-                locationId: locationId
-            };
+            console.log('Finding/Creating Contact...');
 
+            // First, search for existing contact by email
             try {
-                const contactRes = await axios.post('https://services.leadconnectorhq.com/contacts/', contactPayload, { headers });
-                contactId = contactRes.data.contact.id;
-                await logAudit('CREATE', 'Contact', contactId, contactPayload, req, 'SUCCESS', actor);
-            } catch (err) {
-                if (err.response && (err.response.status === 400 || err.response.status === 409)) {
-                    const searchRes = await axios.get(`https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${data.contact.email}`, { headers });
-                    if (searchRes.data.contacts.length > 0) {
-                        contactId = searchRes.data.contacts[0].id;
-                    }
+                const searchRes = await axios.get(
+                    `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(data.contact.email)}`,
+                    { headers }
+                );
+                const existingContacts = searchRes.data.contacts || [];
+                // Find exact email match (search may return partial matches)
+                const exactMatch = existingContacts.find(c =>
+                    c.email && c.email.toLowerCase() === data.contact.email.toLowerCase()
+                );
+                if (exactMatch) {
+                    contactId = exactMatch.id;
+                    console.log(`Found existing contact: ${contactId}`);
                 }
-                if (!contactId) throw err;
+            } catch (searchErr) {
+                console.warn('Contact search failed, will attempt create:', searchErr.message);
+            }
+
+            // If not found, create new contact
+            if (!contactId) {
+                const contactPayload = {
+                    firstName: data.contact.firstName || data.contact.name.split(' ')[0],
+                    lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
+                    email: data.contact.email,
+                    companyName: data.contact.companyName,
+                    locationId: locationId
+                };
+
+                try {
+                    const contactRes = await axios.post('https://services.leadconnectorhq.com/contacts/', contactPayload, { headers });
+                    contactId = contactRes.data.contact.id;
+                    await logAudit('CREATE', 'Contact', contactId, contactPayload, req, 'SUCCESS', actor);
+                    console.log(`Created new contact: ${contactId}`);
+                } catch (createErr) {
+                    // Handle race condition: if contact was created between search and create
+                    if (createErr.response && (createErr.response.status === 400 || createErr.response.status === 409)) {
+                        console.log('Contact creation conflict, re-searching...');
+                        const retrySearch = await axios.get(
+                            `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(data.contact.email)}`,
+                            { headers }
+                        );
+                        const retryContacts = retrySearch.data.contacts || [];
+                        const retryMatch = retryContacts.find(c =>
+                            c.email && c.email.toLowerCase() === data.contact.email.toLowerCase()
+                        );
+                        if (retryMatch) {
+                            contactId = retryMatch.id;
+                            console.log(`Found contact on retry: ${contactId}`);
+                        }
+                    }
+                    if (!contactId) throw createErr;
+                }
             }
         }
 

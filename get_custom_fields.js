@@ -1,7 +1,11 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const GHL_API_KEY = process.env.GHL_API_KEY || 'pit-8f3b0ca9-680b-4a08-b639-c43969eabe05';
+const GHL_API_KEY = process.env.GHL_API_KEY;
+if (!GHL_API_KEY) {
+    console.error('ERROR: GHL_API_KEY environment variable is required');
+    process.exit(1);
+}
 const locationId = 'NFWWwK7qd0rXqtNyOINy';
 
 async function getCustomFields() {

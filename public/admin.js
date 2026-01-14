@@ -1,3 +1,14 @@
+// HTML escape helper to prevent XSS
+const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
 async function loadOpportunities() {
     const tbody = document.getElementById('adminBody');
     try {
@@ -38,18 +49,18 @@ async function loadOpportunities() {
             const statusClass = opp.status === 'new' ? 'badge-new' : 'badge-default';
 
             tr.innerHTML = `
-                <td>${dateStr}</td>
-                <td><strong>${opp.employerName || 'N/A'}</strong></td>
-                <td>${opp.details?.effectiveDate || '-'}</td>
-                <td>${opp.details?.proposalDate || '-'}</td>
+                <td>${escapeHtml(dateStr)}</td>
+                <td><strong>${escapeHtml(opp.employerName || 'N/A')}</strong></td>
+                <td>${escapeHtml(opp.details?.effectiveDate || '-')}</td>
+                <td>${escapeHtml(opp.details?.proposalDate || '-')}</td>
                 <td>
-                    ${opp.broker?.name || 'N/A'}<br>
-                    <small class="text-muted">${opp.broker?.agency || ''}</small>
+                    ${escapeHtml(opp.broker?.name || 'N/A')}<br>
+                    <small class="text-muted">${escapeHtml(opp.broker?.agency || '')}</small>
                 </td>
-                <td><small>${products}</small></td>
-                <td>${opp.details?.totalEmployees || 0}</td>
+                <td><small>${escapeHtml(products)}</small></td>
+                <td>${escapeHtml(opp.details?.totalEmployees || 0)}</td>
                 <td>$${(opp.financials?.yearlyTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                <td><span class="badge ${statusClass}">${opp.status || 'new'}</span></td>
+                <td><span class="badge ${statusClass}">${escapeHtml(opp.status || 'new')}</span></td>
                 <td>
                     ${opp.ghl?.opportunityId ? `<span class="text-success">Synced</span>` : '<span class="text-danger">Failed</span>'}
                 </td>
@@ -144,13 +155,13 @@ async function loadAuditLogs(direction = 'first') {
             const detailsJson = JSON.stringify(log.details, null, 2);
 
             tr.innerHTML = `
-                <td>${dateStr}</td>
-                <td><span class="badge ${statusClass}">${log.status || 'SUCCESS'}</span></td>
-                <td><strong>${actorName}</strong></td>
-                <td><span class="${actionClass}" style="font-weight:bold;">${log.action}</span></td>
-                <td>${log.resourceType || 'N/A'}</td>
-                <td><small>${log.resourceId || 'N/A'}</small></td>
-                <td><button class="view-payload-btn" data-details='${detailsJson.replace(/'/g, "&apos;")}'>View Details</button></td>
+                <td>${escapeHtml(dateStr)}</td>
+                <td><span class="badge ${statusClass}">${escapeHtml(log.status || 'SUCCESS')}</span></td>
+                <td><strong>${escapeHtml(actorName)}</strong></td>
+                <td><span class="${actionClass}" style="font-weight:bold;">${escapeHtml(log.action)}</span></td>
+                <td>${escapeHtml(log.resourceType || 'N/A')}</td>
+                <td><small>${escapeHtml(log.resourceId || 'N/A')}</small></td>
+                <td><button class="view-payload-btn" data-details='${escapeHtml(detailsJson)}'>View Details</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -201,9 +212,16 @@ function exportToCSV() {
                 dateStr = new Date(log.timestamp._seconds * 1000).toISOString();
             }
             
-            // Escape CSV fields
-            const clean = (text) => `"${String(text || '').replace(/"/g, '""')}"`;
-            
+            // Escape CSV fields and prevent CSV injection
+            const clean = (text) => {
+                let str = String(text || '').replace(/"/g, '""');
+                // Prefix with single quote if starts with formula characters
+                if (/^[=+\-@\t\r]/.test(str)) {
+                    str = "'" + str;
+                }
+                return `"${str}"`;
+            };
+
             return [
                 clean(dateStr),
                 clean(log.status || 'SUCCESS'),
