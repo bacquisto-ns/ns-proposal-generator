@@ -9,69 +9,150 @@ const escapeHtml = (str) => {
         .replace(/'/g, '&#039;');
 };
 
-async function loadOpportunities() {
-    const tbody = document.getElementById('adminBody');
+// --- Dashboard & Visualizations ---
+let oppGrid;
+let charts = {};
+
+async function loadDashboard() {
     try {
         const response = await fetch('/api/opportunities');
         if (!response.ok) throw new Error('Failed to fetch data');
-
         const data = await response.json();
 
-        if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No opportunities found.</td></tr>';
-            return;
-        }
+        // 1. Render Charts
+        renderCharts(data);
 
-        tbody.innerHTML = '';
-
-        data.forEach(opp => {
-            const tr = document.createElement('tr');
-
-            // Date Formatting
-            let dateStr = 'N/A';
-            const formatDateObj = (d) => {
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const year = d.getFullYear();
-                return `${month}-${day}-${year}`;
-            };
-
-            if (opp.createdAt && opp.createdAt._seconds) {
-                dateStr = formatDateObj(new Date(opp.createdAt._seconds * 1000));
-            } else if (opp.createdAt) {
-                dateStr = formatDateObj(new Date(opp.createdAt));
-            }
-
-            // Product Summary
-            const products = (opp.products || []).map(p => p.name).join(', ');
-
-            // Status Badge
-            const statusClass = opp.status === 'new' ? 'badge-new' : 'badge-default';
-
-            tr.innerHTML = `
-                <td>${escapeHtml(dateStr)}</td>
-                <td><strong>${escapeHtml(opp.employerName || 'N/A')}</strong></td>
-                <td>${escapeHtml(opp.details?.effectiveDate || '-')}</td>
-                <td>${escapeHtml(opp.details?.proposalDate || '-')}</td>
-                <td>
-                    ${escapeHtml(opp.broker?.name || 'N/A')}<br>
-                    <small class="text-muted">${escapeHtml(opp.broker?.agency || '')}</small>
-                </td>
-                <td><small>${escapeHtml(products)}</small></td>
-                <td>${escapeHtml(opp.details?.totalEmployees || 0)}</td>
-                <td>$${(opp.financials?.yearlyTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                <td><span class="badge ${statusClass}">${escapeHtml(opp.status || 'new')}</span></td>
-                <td>
-                    ${opp.ghl?.opportunityId ? `<span class="text-success">Synced</span>` : '<span class="text-danger">Failed</span>'}
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        // 2. Initialize/Update Grid
+        initOpportunityGrid(data);
 
     } catch (error) {
-        console.error('Error loading admin data:', error);
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading data. Check console.</td></tr>';
+        console.error('Error loading dashboard:', error);
     }
+}
+
+function renderCharts(data) {
+    // Process Data for Charts
+    const statusCounts = {};
+    const monthlyCounts = {};
+
+    data.forEach(opp => {
+        // Status Distribution
+        const status = opp.status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+
+        // Monthly Trend
+        const date = opp.createdAt && opp.createdAt._seconds
+            ? new Date(opp.createdAt._seconds * 1000)
+            : new Date(opp.createdAt);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthlyCounts[monthKey] = (monthlyCounts[monthKey] || 0) + 1;
+    });
+
+    // --- Status Chart (Doughnut) ---
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    if (charts.status) charts.status.destroy();
+
+    charts.status = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(statusCounts).map(s => s.toUpperCase()),
+            datasets: [{
+                data: Object.values(statusCounts),
+                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // --- Trend Chart (Bar) ---
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    if (charts.trend) charts.trend.destroy();
+
+    const sortedMonths = Object.keys(monthlyCounts).sort();
+
+    charts.trend = new Chart(trendCtx, {
+        type: 'bar',
+        data: {
+            labels: sortedMonths,
+            datasets: [{
+                label: 'New Opportunities',
+                data: sortedMonths.map(m => monthlyCounts[m]),
+                backgroundColor: '#80B040',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+}
+
+function initOpportunityGrid(data) {
+    const gridContainer = document.getElementById('oppGrid');
+    if (gridContainer.innerHTML !== '') return; // Already initialized (or update logic if needed)
+
+    // Helper to format date
+    const formatDate = (cell) => {
+        if (!cell) return '-';
+        const d = cell._seconds ? new Date(cell._seconds * 1000) : new Date(cell);
+        return d.toLocaleDateString();
+    }
+
+    oppGrid = new gridjs.Grid({
+        columns: [
+            { name: 'Date', formatter: (cell) => formatDate(cell) },
+            { name: 'Employer', formatter: (cell) => gridjs.html(`<strong>${escapeHtml(cell)}</strong>`) },
+            'Effective',
+            'Broker',
+            { name: 'Products', width: '200px', formatter: (cell) => gridjs.html(`<small>${escapeHtml(cell)}</small>`) },
+            { name: 'Employees', width: '100px' },
+            { name: 'Yearly Total', formatter: (cell) => `$${parseFloat(cell || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            {
+                name: 'Status',
+                formatter: (cell) => {
+                    const cls = cell === 'new' ? 'badge-new' : 'badge-default';
+                    return gridjs.html(`<span class="badge ${cls}">${escapeHtml(cell)}</span>`);
+                }
+            },
+            {
+                name: 'GHL',
+                formatter: (cell) => cell ? gridjs.html('<span class="text-success">Synced</span>') : gridjs.html('<span class="text-danger">Failed</span>')
+            }
+        ],
+        data: data.map(opp => [
+            opp.createdAt,
+            opp.employerName || 'N/A',
+            opp.details?.effectiveDate || '-',
+            opp.broker?.name || 'N/A',
+            (opp.products || []).map(p => p.name).join(', '),
+            opp.details?.totalEmployees || 0,
+            opp.financials?.yearlyTotal || 0,
+            opp.status || 'new',
+            opp.ghl?.opportunityId
+        ]),
+        search: true,
+        sort: true,
+        pagination: {
+            enabled: true,
+            limit: 10
+        },
+        style: {
+            table: { 'font-size': '14px' },
+            th: { 'background-color': '#f8f9fc', 'color': '#858796' }
+        },
+        className: {
+            table: 'table table-bordered'
+        }
+    }).render(gridContainer);
 }
 
 let lastAuditDoc = null;
@@ -211,7 +292,7 @@ function exportToCSV() {
             if (log.timestamp && log.timestamp._seconds) {
                 dateStr = new Date(log.timestamp._seconds * 1000).toISOString();
             }
-            
+
             // Escape CSV fields and prevent CSV injection
             const clean = (text) => {
                 let str = String(text || '').replace(/"/g, '""');
@@ -238,7 +319,7 @@ function exportToCSV() {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `audit_logs_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute("download", `audit_logs_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -249,7 +330,8 @@ function exportToCSV() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadOpportunities();
+    // Initial Load
+    loadDashboard();
 
     // Filter Buttons
     document.getElementById('applyFiltersBtn')?.addEventListener('click', () => loadAuditLogs('first'));
@@ -279,12 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             views.forEach(v => v.style.display = 'none');
+
             const selectedTab = tab.getAttribute('data-tab');
-            if (selectedTab === 'opportunities') {
-                document.getElementById('opportunitiesView').style.display = 'flex'; // Changed to flex for full height
-                loadOpportunities();
+            const view = document.getElementById(`${selectedTab}View`);
+            if (view) view.style.display = 'flex';
+
+            if (selectedTab === 'dashboard') {
+                // Refresh Dashboard
+                loadDashboard();
+            } else if (selectedTab === 'opportunities') {
+                // Grid is already loaded by loadDashboard, just showing the view
             } else if (selectedTab === 'auditLogs') {
-                document.getElementById('auditLogsView').style.display = 'flex'; // Changed to flex for full height
                 loadAuditLogs('first');
             }
         });
