@@ -537,7 +537,13 @@ app.post('/api/create-opportunity', async (req, res) => {
             }
         }
 
-        const oppRes = await axios.post('https://services.leadconnectorhq.com/opportunities/', {
+        // Opportunity Logic: Using standard POST but with defensive logging and field verification
+        console.log(`Creating Opportunity for Contact: ${contactId || 'MISSING'}`);
+        if (!contactId) {
+            throw new Error('Cannot create opportunity: contactId is null or undefined.');
+        }
+
+        const opportunityPayload = {
             name: data.name,
             pipelineId: data.pipelineId,
             pipelineStageId: data.stageId,
@@ -548,9 +554,18 @@ app.post('/api/create-opportunity', async (req, res) => {
             monetaryValue: data.monetaryValue,
             source: data.source,
             customFields: data.customFields
-        }, { headers });
+        };
+
+        console.log('Opportunity Payload:', JSON.stringify(opportunityPayload, null, 2));
+
+        const oppRes = await axios.post('https://services.leadconnectorhq.com/opportunities/', opportunityPayload, { headers });
+
+        console.log('GHL Opportunity Response:', JSON.stringify(oppRes.data, null, 2));
 
         const opportunity = oppRes.data.opportunity || oppRes.data;
+        if (!opportunity || !opportunity.id) {
+            throw new Error('GHL failed to return an opportunity ID in the response.');
+        }
 
         await logAudit('CREATE', 'Opportunity', opportunity.id, {
             name: data.name,
