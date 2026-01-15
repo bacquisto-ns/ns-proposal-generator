@@ -2,10 +2,19 @@ const CONFIG = {
     proxyUrl: '/api/create-opportunity',
     usersUrl: '/api/users',
     contactsUrl: '/api/contacts',
+    configUrl: '/api/config',
     locationId: 'NFWWwK7qd0rXqtNyOINy',
     pipelineId: 'X3z6soG2N6TEvus4f9of',
     stageId: '85aa3281-f8ad-4fa4-9ad5-19c33d530080' // RFP From Broker
 };
+
+let PRODUCTS = [];
+let TIERS = [];
+
+const productBody = document.getElementById('productBody');
+const addProductBtn = document.getElementById('addProductBtn');
+const grandTotalEl = document.getElementById('grandTotal');
+const yearlyTotalEl = document.getElementById('yearlyTotal');
 
 // HTML escape helper to prevent XSS
 const escapeHtml = (str) => {
@@ -61,7 +70,6 @@ function initBrokerLookup() {
 function displayLookupResults(contacts, container, input, emailInput, agencyInput) {
     container.innerHTML = '';
 
-    // Add search results
     contacts.forEach(contact => {
         const item = document.createElement('div');
         item.className = 'lookup-item';
@@ -70,11 +78,23 @@ function displayLookupResults(contacts, container, input, emailInput, agencyInpu
         const email = contact.email || 'No Email';
         const agency = contact.companyName || '';
 
-        item.innerHTML = `
-            <strong>${escapeHtml(fullName)}</strong>
-            <span class="lookup-email">${escapeHtml(email)}</span>
-            ${agency ? `<span class="lookup-agency">${escapeHtml(agency)}</span>` : ''}
-        `;
+        // Use structured element creation for better security
+        const nameEl = document.createElement('strong');
+        nameEl.textContent = fullName;
+
+        const emailEl = document.createElement('span');
+        emailEl.className = 'lookup-email';
+        emailEl.textContent = email;
+
+        item.appendChild(nameEl);
+        item.appendChild(emailEl);
+
+        if (agency) {
+            const agencyEl = document.createElement('span');
+            agencyEl.className = 'lookup-agency';
+            agencyEl.textContent = agency;
+            item.appendChild(agencyEl);
+        }
 
         item.addEventListener('click', () => {
             input.value = fullName;
@@ -86,22 +106,27 @@ function displayLookupResults(contacts, container, input, emailInput, agencyInpu
         container.appendChild(item);
     });
 
-    // --- Added "Create New Contact" Option ---
     const currentQuery = input.value;
     if (currentQuery.length >= 2) {
         const createNewItem = document.createElement('div');
         createNewItem.className = 'lookup-item create-new';
-        createNewItem.innerHTML = `
-            <div class="create-new-content">
-                <span class="plus-icon">+</span>
-                <strong>${escapeHtml(currentQuery)} (Create New Contact)</strong>
-            </div>
-        `;
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'create-new-content';
+
+        const plusIcon = document.createElement('span');
+        plusIcon.className = 'plus-icon';
+        plusIcon.textContent = '+';
+
+        const textEl = document.createElement('strong');
+        textEl.textContent = `${currentQuery} (Create New Contact)`;
+
+        contentEl.appendChild(plusIcon);
+        contentEl.appendChild(textEl);
+        createNewItem.appendChild(contentEl);
 
         createNewItem.addEventListener('click', () => {
-            // Fill the name field with exactly what they typed
             input.value = currentQuery;
-            // Clear but focus the email field to prompt for new info
             if (emailInput) {
                 emailInput.value = '';
                 emailInput.focus();
@@ -118,81 +143,25 @@ function displayLookupResults(contacts, container, input, emailInput, agencyInpu
 
 initBrokerLookup();
 
-// --- Product Row Management ---
-const productBody = document.getElementById('productBody');
-const addProductBtn = document.getElementById('addProductBtn');
-const grandTotalEl = document.getElementById('grandTotal');
-const yearlyTotalEl = document.getElementById('yearlyTotal');
+// --- Product Configuration Loading ---
+async function loadConfig() {
+    try {
+        const response = await fetch(CONFIG.configUrl);
+        if (!response.ok) throw new Error('Failed to load configuration');
+        const config = await response.json();
+        PRODUCTS = config.products;
+        TIERS = config.tiers;
+        console.log('Loaded products and tiers from server.');
 
-const PRODUCTS = [
-    {
-        name: 'FSA',
-        core: true,
-        tiers: [{ min: 1, max: 250, rate: 4.25 }, { min: 251, max: 999, rate: 4.00 }, { min: 1000, max: Infinity, rate: 3.50 }],
-        minFee: 50.00
-    },
-    {
-        name: 'HSA',
-        core: true,
-        tiers: [{ min: 1, max: 250, rate: 2.25 }, { min: 251, max: 999, rate: 2.15 }, { min: 1000, max: Infinity, rate: 1.85 }],
-        minFee: 50.00
-    },
-    {
-        name: 'HRA',
-        core: true,
-        tiers: [{ min: 1, max: 250, rate: 4.25 }, { min: 251, max: 999, rate: 4.00 }, { min: 1000, max: Infinity, rate: 3.50 }],
-        minFee: 50.00
-    },
-    {
-        name: 'LSA',
-        core: true,
-        tiers: [{ min: 1, max: 250, rate: 5.00 }, { min: 251, max: 999, rate: 4.75 }, { min: 1000, max: Infinity, rate: 4.25 }],
-        minFee: 50.00
-    },
-    {
-        name: 'COBRA',
-        core: true,
-        tiers: [{ min: 1, max: 250, rate: 1.00 }, { min: 251, max: 500, rate: 0.85 }, { min: 501, max: 999, rate: 0.75 }, { min: 1000, max: Infinity, rate: 0.75 }],
-        minFee: 50.00
-    },
-    {
-        name: 'Combined Billing - Reconcile',
-        tiers: [{ min: 1, max: 250, rate: 2.00, bundled: 1.75 }, { min: 251, max: 999, rate: 1.75, bundled: 1.50 }, { min: 1000, max: Infinity, rate: 1.35, bundled: 1.00 }],
-        minFee: 200.00,
-        bundledMinFee: 150.00
-    },
-    {
-        name: 'Combined Billing - Reconcile & Pay',
-        tiers: [{ min: 1, max: 250, rate: 2.50, bundled: 2.25 }, { min: 251, max: 999, rate: 2.25, bundled: 2.00 }, { min: 1000, max: Infinity, rate: 1.85, bundled: 1.50 }],
-        minFee: 250.00, // Updated from 200.00 based on JSON
-        bundledMinFee: 200.00  // Updated from 150.00 based on JSON
-    },
-    {
-        name: 'Direct Billing',
-        tiers: [{ min: 1, max: 250, rate: 5.00, bundled: 4.75 }, { min: 251, max: 999, rate: 4.50, bundled: 4.25 }, { min: 1000, max: Infinity, rate: 3.75, bundled: 3.50 }],
-        minFee: 75.00,
-        bundledMinFee: 50.00
-    },
-    {
-        name: 'Spousesaver',
-        tiers: [{ min: 1, max: Infinity, rate: 18.00, bundled: 16.00 }],
-        minFee: 150.00,
-        bundledMinFee: 125.00
-    },
-    {
-        name: 'POP',
-        tiers: [{ min: 1, max: Infinity, rate: 350.00 }],
-        minFee: 350.00,
-        isFlatFee: true
+        // Initialize the interface after config is loaded
+        if (productBody) {
+            productBody.innerHTML = '';
+            productBody.appendChild(createProductRow());
+        }
+    } catch (error) {
+        console.error('Error loading config:', error);
     }
-];
-
-const TIERS = [
-    { label: 'PEPM (Book)', multiplier: 1 },
-    { label: 'Preferred Broker', multiplier: 0.85 }, // Hypothetical preferred discount
-    { label: 'Standard Markup', multiplier: 1.2 },
-    { label: 'Premium Markup', multiplier: 1.5 }
-];
+}
 
 function isBundled() {
     const rows = productBody.querySelectorAll('tr');
@@ -348,10 +317,7 @@ if (addProductBtn) {
     });
 }
 
-// Initial row
-if (productBody) {
-    productBody.appendChild(createProductRow());
-}
+// Initial row will be added by loadConfig()
 
 // Fetch and populate Owners
 async function loadOwners() {
@@ -382,11 +348,23 @@ async function loadOwners() {
 
         if (users.length === 0) {
             console.warn('No users returned from GoHighLevel location.');
-            ownerSelect.innerHTML = '<option value="" disabled selected>No owners found</option>';
+            ownerSelect.innerHTML = '';
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.disabled = true;
+            opt.selected = true;
+            opt.textContent = 'No owners found';
+            ownerSelect.appendChild(opt);
             return;
         }
 
-        ownerSelect.innerHTML = '<option value="" disabled selected>Select Owner...</option>';
+        ownerSelect.innerHTML = '';
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.disabled = true;
+        defaultOpt.selected = true;
+        defaultOpt.textContent = 'Select Owner...';
+        ownerSelect.appendChild(defaultOpt);
         users.forEach(user => {
             const opt = document.createElement('option');
             opt.value = user.id;
@@ -396,7 +374,13 @@ async function loadOwners() {
         console.log(`Populated ${users.length} owners in dropdown.`);
     } catch (error) {
         console.error('Detailed error loading owners:', error);
-        ownerSelect.innerHTML = '<option value="" disabled selected>Error loading owners</option>';
+        ownerSelect.innerHTML = '';
+        const errOpt = document.createElement('option');
+        errOpt.value = '';
+        errOpt.disabled = true;
+        errOpt.selected = true;
+        errOpt.textContent = 'Error loading owners';
+        ownerSelect.appendChild(errOpt);
     }
 }
 // Set default dates on load
@@ -408,9 +392,11 @@ function setDefaultDates() {
     if (proposalDateInput) proposalDateInput.value = today;
     // Note: effectiveDate is usually a future date, so we leave it to the user but could default to next month
 }
-setDefaultDates();
-
-loadOwners();
+// Initialize Portal
+loadConfig().then(() => {
+    setDefaultDates();
+    loadOwners();
+});
 
 document.getElementById('opportunityForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -536,7 +522,17 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         const successDetail = document.getElementById('successDetail');
 
         if (successMessage && formSection) {
-            if (successDetail) successDetail.innerHTML = `Opportunity "${opportunityName}" created successfully!<br><button id="downloadProposal" class="btn btn-primary" style="margin-top: 15px;">Download Pricing Proposal PDF</button>`;
+            if (successDetail) {
+                successDetail.textContent = `Opportunity "${opportunityName}" created successfully!`;
+                const br = document.createElement('br');
+                const dlBtn = document.createElement('button');
+                dlBtn.id = 'downloadProposal';
+                dlBtn.className = 'btn btn-primary';
+                dlBtn.style.marginTop = '15px';
+                dlBtn.textContent = 'Download Pricing Proposal PDF';
+                successDetail.appendChild(br);
+                successDetail.appendChild(dlBtn);
+            }
             formSection.style.display = 'none';
             successMessage.style.display = 'block';
 

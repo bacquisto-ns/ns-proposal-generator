@@ -7,6 +7,10 @@ const FormData = require('form-data');
 const admin = require('firebase-admin');
 require('dotenv').config();
 
+// --- Shared Logic ---
+const { sanitizeString, sanitizeEmail, sanitizeNumber, getGHLHeaders } = require('./shared/utils');
+const productsConfig = require('./shared/products.json');
+
 // Initialize Firebase Admin (Auto-detects credentials or emulator)
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -44,7 +48,7 @@ async function logAudit(action, resourceType, resourceId, details, req = null, s
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors()); // Keep open for local development
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -54,32 +58,18 @@ if (!GHL_API_KEY) {
     process.exit(1);
 }
 
-const headers = {
-    'Authorization': `Bearer ${GHL_API_KEY}`,
-    'Version': '2021-07-28',
-    'Content-Type': 'application/json'
-};
-
-// --- Input Validation & Sanitization Helpers ---
-const sanitizeString = (str, maxLength = 500) => {
-    if (typeof str !== 'string') return '';
-    return str
-        .slice(0, maxLength)
-        .replace(/[<>]/g, '') // Remove < > to prevent HTML injection
-        .trim();
-};
-
-const sanitizeEmail = (email) => {
-    if (typeof email !== 'string') return '';
-    const sanitized = email.toLowerCase().trim().slice(0, 254);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(sanitized) ? sanitized : '';
-};
-
-const sanitizeNumber = (val, defaultVal = 0) => {
-    const num = parseFloat(val);
-    return isNaN(num) ? defaultVal : num;
-};
+// --- Config Endpoint for Frontend ---
+app.get('/api/config', (req, res) => {
+    res.json({
+        products: productsConfig,
+        tiers: [
+            { label: 'PEPM (Book)', multiplier: 1 },
+            { label: 'Preferred Broker', multiplier: 0.85 },
+            { label: 'Standard Markup', multiplier: 1.2 },
+            { label: 'Premium Markup', multiplier: 1.5 }
+        ]
+    });
+});
 
 const validateOpportunityInput = (data) => {
     const errors = [];
@@ -367,8 +357,7 @@ async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, j
             {
                 headers: {
                     ...form.getHeaders(),
-                    'Authorization': `Bearer ${GHL_API_KEY}`,
-                    'Version': '2021-07-28'
+                    ...getGHLHeaders(GHL_API_KEY)
                 }
             }
         );
@@ -382,11 +371,7 @@ async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, j
                 body: `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${fileUrl})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`,
             },
             {
-                headers: {
-                    'Authorization': `Bearer ${GHL_API_KEY}`,
-                    'Version': '2021-07-28',
-                    'Content-Type': 'application/json'
-                }
+                headers: getGHLHeaders(GHL_API_KEY)
             }
         );
 
@@ -496,7 +481,7 @@ async function sendApprovalEmail(data, opportunityId) {
         const response = await axios.post(
             `https://services.leadconnectorhq.com/conversations/messages`,
             payload,
-            { headers }
+            { headers: getGHLHeaders(GHL_API_KEY) }
         );
 
         console.log('Approval email sent to Josh Collins:', response.data);
@@ -513,11 +498,7 @@ app.get('/api/users', async (req, res) => {
         console.log(`[Users API] Requesting users for location: ${locationId}`);
 
         const response = await axios.get(`https://services.leadconnectorhq.com/users/?locationId=${locationId}`, {
-            headers: {
-                'Authorization': `Bearer ${GHL_API_KEY}`,
-                'Version': '2021-07-28',
-                'Content-Type': 'application/json'
-            }
+            headers: getGHLHeaders(GHL_API_KEY)
         });
 
         const users = response.data.users || response.data;
@@ -541,11 +522,7 @@ app.get('/api/contacts', async (req, res) => {
 
         // Using GET /contacts/ as it supports query and is known working in this project
         const response = await axios.get(`https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(query)}&limit=50`, {
-            headers: {
-                'Authorization': `Bearer ${GHL_API_KEY}`,
-                'Version': '2021-07-28',
-                'Content-Type': 'application/json'
-            }
+            headers: getGHLHeaders(GHL_API_KEY)
         });
 
         const contacts = response.data.contacts || [];
@@ -596,7 +573,7 @@ app.post('/api/create-opportunity', async (req, res) => {
             try {
                 const searchRes = await axios.get(
                     `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(data.contact.email)}`,
-                    { headers }
+                    { headers: getGHLHeaders(GHL_API_KEY) }
                 );
                 const existingContacts = searchRes.data.contacts || [];
                 // Find exact email match (search may return partial matches)
@@ -622,7 +599,7 @@ app.post('/api/create-opportunity', async (req, res) => {
                 };
 
                 try {
-                    const contactRes = await axios.post('https://services.leadconnectorhq.com/contacts/', contactPayload, { headers });
+                    const contactRes = await axios.post('https://services.leadconnectorhq.com/contacts/', contactPayload, { headers: getGHLHeaders(GHL_API_KEY) });
                     contactId = contactRes.data.contact.id;
                     await logAudit('CREATE', 'Contact', contactId, contactPayload, req, 'SUCCESS', actor);
                     console.log(`Created new contact: ${contactId}`);
@@ -632,7 +609,7 @@ app.post('/api/create-opportunity', async (req, res) => {
                         console.log('Contact creation conflict, re-searching...');
                         const retrySearch = await axios.get(
                             `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(data.contact.email)}`,
-                            { headers }
+                            { headers: getGHLHeaders(GHL_API_KEY) }
                         );
                         const retryContacts = retrySearch.data.contacts || [];
                         const retryMatch = retryContacts.find(c =>
@@ -663,7 +640,7 @@ app.post('/api/create-opportunity', async (req, res) => {
             customFields: data.customFields
         };
 
-        const oppRes = await axios.post('https://services.leadconnectorhq.com/opportunities/', opportunityPayload, { headers });
+        const oppRes = await axios.post('https://services.leadconnectorhq.com/opportunities/', opportunityPayload, { headers: getGHLHeaders(GHL_API_KEY) });
         const opportunity = oppRes.data.opportunity || oppRes.data;
         console.log('Opportunity Created Successfully!');
 

@@ -175,7 +175,40 @@ button:active {
     transform: translateY(0);
 }
 
+/* --- Responsive Design --- */
+@media (max-width: 1024px) {
+    .container {
+        max-width: 95%;
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .btn-admin {
+        position: static;
+        display: block;
+        margin: 1rem auto 0;
+        width: fit-content;
+    }
+}
+
 @media (max-width: 640px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .product-table th, .product-table td {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
     .form-grid {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -619,7 +652,17 @@ tfoot td {
     cursor: pointer;
     font-size: 0.95rem;
     border-bottom: 1px solid #f1f5f9;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    filter: brightness(1.1);
+}
+
+.btn:active {
+    transform: translateY(0);
 }
 
 .lookup-item:last-child {

@@ -9,6 +9,10 @@ const os = require('os');
 const FormData = require('form-data');
 const admin = require('firebase-admin');
 
+// --- Shared Logic ---
+const { sanitizeString, sanitizeEmail, sanitizeNumber, getGHLHeaders } = require('./shared/utils');
+const productsConfig = require('./shared/products.json');
+
 if (!admin.apps.length) {
     admin.initializeApp();
     admin.firestore().settings({ ignoreUndefinedProperties: true });
@@ -42,40 +46,37 @@ async function logAudit(action, resourceType, resourceId, details, req = null, s
 const ghlApiKey = defineSecret("GHL_API_KEY");
 
 const app = express();
-app.use(cors({ origin: true }));
+
+// Restrict CORS to specific domain in production
+const allowedOrigins = [
+    'https://nueforms-sales-intake-999.web.app',
+    'http://localhost:3000',
+    'http://localhost:5000'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
 app.use(express.json());
 
-const getHeaders = (apiKey) => {
-    if (!apiKey || !apiKey.trim()) {
-        throw new Error('GHL_API_KEY secret is not configured. Please set it using: firebase functions:secrets:set GHL_API_KEY');
-    }
-    return {
-        'Authorization': `Bearer ${apiKey.trim()}`,
-        'Version': '2021-07-28',
-        'Content-Type': 'application/json'
-    };
-};
-
-// --- Input Validation & Sanitization Helpers ---
-const sanitizeString = (str, maxLength = 500) => {
-    if (typeof str !== 'string') return '';
-    return str
-        .slice(0, maxLength)
-        .replace(/[<>]/g, '')
-        .trim();
-};
-
-const sanitizeEmail = (email) => {
-    if (typeof email !== 'string') return '';
-    const sanitized = email.toLowerCase().trim().slice(0, 254);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(sanitized) ? sanitized : '';
-};
-
-const sanitizeNumber = (val, defaultVal = 0) => {
-    const num = parseFloat(val);
-    return isNaN(num) ? defaultVal : num;
-};
+// --- Config Endpoint for Frontend ---
+app.get('/api/config', (req, res) => {
+    res.json({
+        products: productsConfig,
+        tiers: [
+            { label: 'PEPM (Book)', multiplier: 1 },
+            { label: 'Preferred Broker', multiplier: 0.85 },
+            { label: 'Standard Markup', multiplier: 1.2 },
+            { label: 'Premium Markup', multiplier: 1.5 }
+        ]
+    });
+});
 
 const validateOpportunityInput = (data) => {
     const errors = [];
@@ -427,7 +428,7 @@ async function sendApprovalEmail(data, opportunityId, apiKey) {
         const response = await axios.post(
             `https://services.leadconnectorhq.com/conversations/messages`,
             payload,
-            { headers: getHeaders(apiKey) }
+            { headers: getGHLHeaders(apiKey) }
         );
 
         console.log('Approval email sent to Josh Collins:', response.data);
@@ -445,7 +446,7 @@ app.get('/api/users', async (req, res) => {
         console.log(`[Users API] Requesting users for location: ${locationId}`);
 
         const response = await axios.get(`https://services.leadconnectorhq.com/users/?locationId=${locationId}`, {
-            headers: getHeaders(apiKey)
+            headers: getGHLHeaders(apiKey)
         });
 
         const users = response.data.users || response.data;
@@ -465,7 +466,7 @@ app.get('/api/contacts', async (req, res) => {
         console.log(`[Contacts API] Searching contacts for location: ${locationId}, query: ${query}`);
 
         const response = await axios.get(`https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(query)}&limit=50`, {
-            headers: getHeaders(apiKey)
+            headers: getGHLHeaders(apiKey)
         });
 
         const contacts = response.data.contacts || [];
@@ -501,7 +502,7 @@ app.post('/api/create-opportunity', async (req, res) => {
 
     try {
         const apiKey = ghlApiKey.value();
-        const headers = getHeaders(apiKey);
+        const headers = getGHLHeaders(apiKey);
         console.log('--- Processing New Opportunity Request (Prod) ---');
         console.log('Request Payload (sanitized):', JSON.stringify(data, null, 2));
 
@@ -727,7 +728,7 @@ app.get('/api/approve-opportunity', async (req, res) => {
         if (!opportunityId) return res.status(400).send('Opportunity ID is required');
 
         const apiKey = ghlApiKey.value();
-        const headers = getHeaders(apiKey);
+        const headers = getGHLHeaders(apiKey);
 
         // 1. Update Firestore
         const snapshot = await admin.firestore().collection('opportunities')
@@ -774,7 +775,7 @@ app.get('/api/reject-opportunity', async (req, res) => {
         if (!opportunityId) return res.status(400).send('Opportunity ID is required');
 
         const apiKey = ghlApiKey.value();
-        const headers = getHeaders(apiKey);
+        const headers = getGHLHeaders(apiKey);
 
         // 1. Update Firestore
         const snapshot = await admin.firestore().collection('opportunities')
