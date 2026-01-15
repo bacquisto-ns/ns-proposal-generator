@@ -507,62 +507,33 @@ app.post('/api/create-opportunity', async (req, res) => {
         console.log('Request Payload (sanitized):', JSON.stringify(data, null, 2));
 
 
-        // Contact Logic (check-then-create pattern to avoid race conditions)
+        // Contact Logic: Use Upsert to establish contactId atomically
         let contactId = data.contactId;
         if (!contactId && data.contact) {
-            console.log('Finding/Creating Contact...');
+            console.log('Upserting Contact...');
+            const upsertPayload = {
+                firstName: data.contact.firstName || data.contact.name.split(' ')[0],
+                lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
+                email: data.contact.email,
+                companyName: data.contact.companyName,
+                locationId: locationId
+                // Note: customFields for contacts are NOT included here to keep it lean
+                // as the opportunity's customFields are handled separately below.
+            };
 
-            // First, search for existing contact by email
-            try {
-                const searchRes = await axios.get(
-                    `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(data.contact.email)}`,
-                    { headers }
-                );
-                const existingContacts = searchRes.data.contacts || [];
-                const exactMatch = existingContacts.find(c =>
-                    c.email && c.email.toLowerCase() === data.contact.email.toLowerCase()
-                );
-                if (exactMatch) {
-                    contactId = exactMatch.id;
-                    console.log(`Found existing contact: ${contactId}`);
-                }
-            } catch (searchErr) {
-                console.warn('Contact search failed, will attempt create:', searchErr.message);
-            }
+            const upsertRes = await axios.post(
+                'https://services.leadconnectorhq.com/contacts/upsert',
+                upsertPayload,
+                { headers }
+            );
 
-            // If not found, create new contact
-            if (!contactId) {
-                try {
-                    const contactRes = await axios.post('https://services.leadconnectorhq.com/contacts/', {
-                        firstName: data.contact.firstName || data.contact.name.split(' ')[0],
-                        lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
-                        email: data.contact.email,
-                        companyName: data.contact.companyName,
-                        locationId: locationId,
-                        customFields: data.customFields
-                    }, { headers });
-                    contactId = contactRes.data.contact.id;
-                    await logAudit('CREATE', 'Contact', contactId, { name: data.contact.name, email: data.contact.email, company: data.contact.companyName }, req, 'SUCCESS', actor);
-                    console.log(`Created new contact: ${contactId}`);
-                } catch (createErr) {
-                    // Handle race condition: if contact was created between search and create
-                    if (createErr.response && (createErr.response.status === 400 || createErr.response.status === 409)) {
-                        console.log('Contact creation conflict, re-searching...');
-                        const retrySearch = await axios.get(
-                            `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(data.contact.email)}`,
-                            { headers }
-                        );
-                        const retryContacts = retrySearch.data.contacts || [];
-                        const retryMatch = retryContacts.find(c =>
-                            c.email && c.email.toLowerCase() === data.contact.email.toLowerCase()
-                        );
-                        if (retryMatch) {
-                            contactId = retryMatch.id;
-                            console.log(`Found contact on retry: ${contactId}`);
-                        }
-                    }
-                    if (!contactId) throw createErr;
-                }
+            contactId = upsertRes.data.contact.id;
+            const isNew = upsertRes.data.new;
+
+            console.log(`${isNew ? 'Created' : 'Updated'} contact via Upsert: ${contactId}`);
+
+            if (isNew) {
+                await logAudit('CREATE', 'Contact', contactId, { name: data.contact.name, email: data.contact.email, company: data.contact.companyName }, req, 'SUCCESS', actor);
             }
         }
 
