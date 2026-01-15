@@ -1,0 +1,217 @@
+[
+    {
+        "name": "FSA",
+        "core": true,
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 4.25
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 4.00
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 3.50
+            }
+        ],
+        "minFee": 50.00
+    },
+    {
+        "name": "HSA",
+        "core": true,
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 2.25
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 2.15
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 1.85
+            }
+        ],
+        "minFee": 50.00
+    },
+    {
+        "name": "HRA",
+        "core": true,
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 4.25
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 4.00
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 3.50
+            }
+        ],
+        "minFee": 50.00
+    },
+    {
+        "name": "LSA",
+        "core": true,
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 5.00
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 4.75
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 4.25
+            }
+        ],
+        "minFee": 50.00
+    },
+    {
+        "name": "COBRA",
+        "core": true,
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 1.00
+            },
+            {
+                "min": 251,
+                "max": 500,
+                "rate": 0.85
+            },
+            {
+                "min": 501,
+                "max": 999,
+                "rate": 0.75
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 0.75
+            }
+        ],
+        "minFee": 50.00
+    },
+    {
+        "name": "Combined Billing - Reconcile",
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 2.00,
+                "bundled": 1.75
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 1.75,
+                "bundled": 1.50
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 1.35,
+                "bundled": 1.00
+            }
+        ],
+        "minFee": 200.00,
+        "bundledMinFee": 150.00
+    },
+    {
+        "name": "Combined Billing - Reconcile & Pay",
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 2.50,
+                "bundled": 2.25
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 2.25,
+                "bundled": 2.00
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 1.85,
+                "bundled": 1.50
+            }
+        ],
+        "minFee": 250.00,
+        "bundledMinFee": 200.00
+    },
+    {
+        "name": "Direct Billing",
+        "tiers": [
+            {
+                "min": 1,
+                "max": 250,
+                "rate": 5.00,
+                "bundled": 4.75
+            },
+            {
+                "min": 251,
+                "max": 999,
+                "rate": 4.50,
+                "bundled": 4.25
+            },
+            {
+                "min": 1000,
+                "max": 999999,
+                "rate": 3.75,
+                "bundled": 3.50
+            }
+        ],
+        "minFee": 75.00,
+        "bundledMinFee": 50.00
+    },
+    {
+        "name": "Spousesaver",
+        "tiers": [
+            {
+                "min": 1,
+                "max": 999999,
+                "rate": 18.00,
+                "bundled": 16.00
+            }
+        ],
+        "minFee": 150.00,
+        "bundledMinFee": 125.00
+    },
+    {
+        "name": "POP",
+        "tiers": [
+            {
+                "min": 1,
+                "max": 999999,
+                "rate": 350.00
+            }
+        ],
+        "minFee": 350.00,
+        "isFlatFee": true
+    }
+]
