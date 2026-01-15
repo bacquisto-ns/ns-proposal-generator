@@ -11,7 +11,24 @@ const admin = require('firebase-admin');
 
 // --- Shared Logic ---
 const { sanitizeString, sanitizeEmail, sanitizeNumber, getGHLHeaders } = require('./shared/utils');
+const { GHLService } = require('./shared/ghl-service');
 const productsConfig = require('./shared/products.json');
+
+// --- GHL Service Instance (lazy initialization) ---
+let ghlServiceInstance = null;
+const GHL_LOCATION_ID = 'NFWWwK7qd0rXqtNyOINy';
+
+async function getGHLService(apiKey) {
+    if (!ghlServiceInstance || ghlServiceInstance.apiKey !== apiKey) {
+        ghlServiceInstance = new GHLService(apiKey, GHL_LOCATION_ID, {
+            useMCP: true,
+            useRateLimiting: true,
+            retryOnError: true
+        });
+        await ghlServiceInstance.initialize();
+    }
+    return ghlServiceInstance;
+}
 
 if (!admin.apps.length) {
     admin.initializeApp();
@@ -334,7 +351,7 @@ async function createProposalPDF(data, outputPath) {
     }
 }
 
-async function sendApprovalEmail(data, opportunityId, apiKey) {
+async function sendApprovalEmail(data, opportunityId, ghlService) {
     try {
         const joshCollinsContactId = '357NYkROmrFIMPiAdpUc';
         const productsWithOverride = (data.products || []).filter(p => p.isOverride);
@@ -362,7 +379,7 @@ async function sendApprovalEmail(data, opportunityId, apiKey) {
                     </div>
                     <div style="padding: 30px;">
                         <p style="font-size: 16px;">An opportunity has been created that requires your approval due to price overrides.</p>
-                        
+
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
                             <h4 style="margin-top: 0; color: #003366; border-bottom: 2px solid #80B040; display: inline-block; padding-bottom: 5px;">Proposal Details</h4>
                             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
@@ -391,18 +408,18 @@ async function sendApprovalEmail(data, opportunityId, apiKey) {
                         </table>
 
                         <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
-                            <a href="${baseUrl}/api/approve-opportunity?id=${opportunityId}" 
+                            <a href="${baseUrl}/api/approve-opportunity?id=${opportunityId}"
                                style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 10px; display: inline-block; min-width: 120px;">
                                 APPROVE
                             </a>
-                            <a href="${baseUrl}/api/reject-opportunity?id=${opportunityId}" 
+                            <a href="${baseUrl}/api/reject-opportunity?id=${opportunityId}"
                                style="background-color: #d32f2f; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 10px; display: inline-block; min-width: 120px;">
                                 REJECT
                             </a>
                         </div>
-                        
+
                         <p style="text-align: center; margin-top: 25px;">
-                            <a href="https://app.gohighlevel.com/v2/location/${data.locationId}/opportunities/list" style="color: #003366; font-size: 13px; text-decoration: underline;">
+                            <a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list" style="color: #003366; font-size: 13px; text-decoration: underline;">
                                 View Opportunity in GHL Pipeline
                             </a>
                         </p>
@@ -425,14 +442,10 @@ async function sendApprovalEmail(data, opportunityId, apiKey) {
             message: `Action Required: Price override approval for ${data.name}. Visit the portal to review.`
         };
 
-        const response = await axios.post(
-            `https://services.leadconnectorhq.com/conversations/messages`,
-            payload,
-            { headers: getGHLHeaders(apiKey) }
-        );
+        const response = await ghlService.sendMessage(payload);
 
-        console.log('Approval email sent to Josh Collins:', response.data);
-        return response.data;
+        console.log('Approval email sent to Josh Collins:', response);
+        return response;
     } catch (error) {
         console.error('Error sending approval email:', error.response?.data || error.message);
     }
@@ -442,14 +455,12 @@ async function sendApprovalEmail(data, opportunityId, apiKey) {
 app.get('/api/users', async (req, res) => {
     try {
         const apiKey = ghlApiKey.value();
-        const locationId = 'NFWWwK7qd0rXqtNyOINy';
-        console.log(`[Users API] Requesting users for location: ${locationId}`);
+        const ghlService = await getGHLService(apiKey);
+        console.log(`[Users API] Requesting users for location: ${GHL_LOCATION_ID}`);
 
-        const response = await axios.get(`https://services.leadconnectorhq.com/users/?locationId=${locationId}`, {
-            headers: getGHLHeaders(apiKey)
-        });
+        const response = await ghlService.getUsers();
 
-        const users = response.data.users || response.data;
+        const users = response.users || response;
         console.log(`[Users API] Successfully fetched ${Array.isArray(users) ? users.length : 0} users.`);
         res.json(users);
     } catch (error) {
@@ -461,15 +472,13 @@ app.get('/api/users', async (req, res) => {
 app.get('/api/contacts', async (req, res) => {
     try {
         const apiKey = ghlApiKey.value();
-        const locationId = 'NFWWwK7qd0rXqtNyOINy';
+        const ghlService = await getGHLService(apiKey);
         const query = req.query.query || '';
-        console.log(`[Contacts API] Searching contacts for location: ${locationId}, query: ${query}`);
+        console.log(`[Contacts API] Searching contacts for location: ${GHL_LOCATION_ID}, query: ${query}`);
 
-        const response = await axios.get(`https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(query)}&limit=50`, {
-            headers: getGHLHeaders(apiKey)
-        });
+        const response = await ghlService.searchContacts(query, { limit: 50 });
 
-        const contacts = response.data.contacts || [];
+        const contacts = response.contacts || [];
         console.log(`[Contacts API] Successfully fetched ${contacts.length} contacts.`);
         res.json(contacts);
     } catch (error) {
@@ -502,7 +511,8 @@ app.post('/api/create-opportunity', async (req, res) => {
 
     try {
         const apiKey = ghlApiKey.value();
-        const headers = getGHLHeaders(apiKey);
+        const ghlService = await getGHLService(apiKey);
+        const headers = getGHLHeaders(apiKey); // Keep for legacy operations (PDF upload)
         console.log('--- Processing New Opportunity Request (Prod) ---');
         console.log('Request Payload (sanitized):', JSON.stringify(data, null, 2));
 
@@ -510,27 +520,21 @@ app.post('/api/create-opportunity', async (req, res) => {
         // Contact Logic: Use Upsert to establish contactId atomically
         let contactId = data.contactId;
         if (!contactId && data.contact) {
-            console.log('Upserting Contact...');
+            console.log('Upserting Contact via GHLService...');
             const upsertPayload = {
                 firstName: data.contact.firstName || data.contact.name.split(' ')[0],
                 lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
                 email: data.contact.email,
-                companyName: data.contact.companyName,
-                locationId: locationId
-                // Note: customFields for contacts are NOT included here to keep it lean
-                // as the opportunity's customFields are handled separately below.
+                companyName: data.contact.companyName
+                // Note: locationId is handled by GHLService
             };
 
-            const upsertRes = await axios.post(
-                'https://services.leadconnectorhq.com/contacts/upsert',
-                upsertPayload,
-                { headers }
-            );
+            const upsertRes = await ghlService.upsertContact(upsertPayload);
 
-            contactId = upsertRes.data.contact.id;
-            const isNew = upsertRes.data.new;
+            contactId = upsertRes.contact.id;
+            const isNew = upsertRes.new;
 
-            console.log(`${isNew ? 'Created' : 'Updated'} contact via Upsert: ${contactId}`);
+            console.log(`${isNew ? 'Created' : 'Updated'} contact via GHLService Upsert: ${contactId}`);
 
             if (isNew) {
                 await logAudit('CREATE', 'Contact', contactId, { name: data.contact.name, email: data.contact.email, company: data.contact.companyName }, req, 'SUCCESS', actor);
@@ -549,20 +553,20 @@ app.post('/api/create-opportunity', async (req, res) => {
             pipelineStageId: data.stageId,
             status: data.status || 'open',
             contactId: contactId,
-            locationId: locationId,
             assignedTo: data.assignedTo,
             monetaryValue: data.monetaryValue,
             source: data.source,
             customFields: data.customFields
+            // Note: locationId is handled by GHLService
         };
 
         console.log('Opportunity Payload:', JSON.stringify(opportunityPayload, null, 2));
 
-        const oppRes = await axios.post('https://services.leadconnectorhq.com/opportunities/', opportunityPayload, { headers });
+        const oppRes = await ghlService.createOpportunity(opportunityPayload);
 
-        console.log('GHL Opportunity Response:', JSON.stringify(oppRes.data, null, 2));
+        console.log('GHL Opportunity Response:', JSON.stringify(oppRes, null, 2));
 
-        const opportunity = oppRes.data.opportunity || oppRes.data;
+        const opportunity = oppRes.opportunity || oppRes;
         if (!opportunity || !opportunity.id) {
             throw new Error('GHL failed to return an opportunity ID in the response.');
         }
@@ -649,9 +653,9 @@ app.post('/api/create-opportunity', async (req, res) => {
                 headers: { ...form.getHeaders(), 'Authorization': `Bearer ${apiKey}`, 'Version': '2021-07-28' }
             });
 
-            await axios.post(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
-                body: `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${uploadRes.data.url})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`
-            }, { headers });
+            await ghlService.addContactNote(contactId,
+                `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${uploadRes.data.url})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`
+            );
         } catch (automationErr) {
             console.error('Automation Failed (PDF):', automationErr.message);
         }
@@ -659,13 +663,13 @@ app.post('/api/create-opportunity', async (req, res) => {
         // Send Approval Email if overrides exist (Independent)
         try {
             if (data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval')?.field_value === 'Yes') {
-                await sendApprovalEmail(data, opportunity.id, apiKey);
+                await sendApprovalEmail(data, opportunity.id, ghlService);
             }
         } catch (emailErr) {
             console.error('Approval Email Failed:', emailErr.message);
         }
 
-        res.json(oppRes.data);
+        res.json(oppRes);
     } catch (error) {
         console.error('ERROR:', error.response ? JSON.stringify(error.response.data) : error.message);
 
@@ -714,7 +718,7 @@ app.get('/api/approve-opportunity', async (req, res) => {
         if (!opportunityId) return res.status(400).send('Opportunity ID is required');
 
         const apiKey = ghlApiKey.value();
-        const headers = getGHLHeaders(apiKey);
+        const ghlService = await getGHLService(apiKey);
 
         // 1. Update Firestore
         const snapshot = await admin.firestore().collection('opportunities')
@@ -730,10 +734,8 @@ app.get('/api/approve-opportunity', async (req, res) => {
             });
         }
 
-        // 2. Add note to GHL
-        await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`, {
-            body: `**Price override approved by Josh Collins via email.**`
-        }, { headers });
+        // 2. Add note to GHL via GHLService
+        await ghlService.addOpportunityNote(opportunityId, `**Price override approved by Josh Collins via email.**`);
 
         res.send(`
             <html>
@@ -761,7 +763,7 @@ app.get('/api/reject-opportunity', async (req, res) => {
         if (!opportunityId) return res.status(400).send('Opportunity ID is required');
 
         const apiKey = ghlApiKey.value();
-        const headers = getGHLHeaders(apiKey);
+        const ghlService = await getGHLService(apiKey);
 
         // 1. Update Firestore
         const snapshot = await admin.firestore().collection('opportunities')
@@ -777,10 +779,8 @@ app.get('/api/reject-opportunity', async (req, res) => {
             });
         }
 
-        // 2. Add note to GHL
-        await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`, {
-            body: `**Price override rejected by Josh Collins via email.**`
-        }, { headers });
+        // 2. Add note to GHL via GHLService
+        await ghlService.addOpportunityNote(opportunityId, `**Price override rejected by Josh Collins via email.**`);
 
         res.send(`
             <html>
