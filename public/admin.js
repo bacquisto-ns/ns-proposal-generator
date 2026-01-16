@@ -126,6 +126,12 @@ function initOpportunityGrid(data) {
             {
                 name: 'GHL',
                 formatter: (cell) => cell ? gridjs.html('<span class="text-success">Synced</span>') : gridjs.html('<span class="text-danger">Failed</span>')
+            },
+            {
+                name: 'Actions',
+                formatter: (cell, row) => {
+                    return gridjs.html(`<button class="btn btn-sm btn-primary send-proposal-btn" data-id="${cell}">Download & Send</button>`);
+                }
             }
         ],
         data: data.map(opp => [
@@ -137,7 +143,8 @@ function initOpportunityGrid(data) {
             opp.details?.totalEmployees || 0,
             opp.financials?.yearlyTotal || 0,
             opp.status || 'new',
-            opp.ghl?.opportunityId
+            opp.ghl?.opportunityId,
+            opp.id
         ]),
         search: true,
         sort: true,
@@ -153,6 +160,77 @@ function initOpportunityGrid(data) {
             table: 'table table-bordered'
         }
     }).render(gridContainer);
+
+    // Global listener for dynamic buttons
+    gridContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('send-proposal-btn')) {
+            const oppId = e.target.getAttribute('data-id');
+            const opp = data.find(o => o.id === oppId);
+            if (!opp) return;
+
+            const btn = e.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                // Construct data for PDF generation
+                const pdfData = {
+                    employerName: opp.employerName,
+                    effectiveDate: opp.details?.effectiveDate,
+                    proposalDate: opp.details?.proposalDate || new Date().toISOString().split('T')[0],
+                    opportunityName: opp.name,
+                    contactId: opp.broker?.id || opp.contactId, // Try multiple fields
+                    assignedTo: opp.assignedTo,
+                    products: opp.products || [],
+                    proposalMessage: opp.proposalMessage || '',
+                    brokerName: opp.broker?.name,
+                    brokerEmail: opp.broker?.email,
+                    brokerAgency: opp.broker?.agency
+                };
+
+                await generateProposalPDF(pdfData);
+                btn.textContent = 'Sent!';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }, 2000);
+            } catch (err) {
+                console.error('Error sending proposal:', err);
+                alert('Failed to send proposal.');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+    });
+}
+
+async function generateProposalPDF(formData) {
+    try {
+        const response = await fetch('/api/generate-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Proposal_${formData.employerName || formData.businessName || 'NueSynergy'}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } else {
+            throw new Error('Failed to generate PDF');
+        }
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        throw error;
+    }
 }
 
 let lastAuditDoc = null;

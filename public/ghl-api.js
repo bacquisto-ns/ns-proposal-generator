@@ -15,6 +15,27 @@ const productBody = document.getElementById('productBody');
 const addProductBtn = document.getElementById('addProductBtn');
 const grandTotalEl = document.getElementById('grandTotal');
 const yearlyTotalEl = document.getElementById('yearlyTotal');
+const summaryEls = {
+    monthly: document.getElementById('summaryMonthly'),
+    yearly: document.getElementById('summaryYearly'),
+    productsCount: document.getElementById('summaryProductsCount'),
+    productsList: document.getElementById('summaryProductsList'),
+    employees: document.getElementById('summaryEmployees'),
+    owner: document.getElementById('summaryOwner'),
+    employer: document.getElementById('summaryEmployer'),
+    effectiveDate: document.getElementById('summaryEffectiveDate'),
+    proposalDate: document.getElementById('summaryProposalDate'),
+    approval: document.getElementById('summaryApproval')
+};
+const summaryState = {
+    hasOverride: false,
+    monthlyTotal: 0,
+    yearlyTotal: 0
+};
+const totalState = {
+    monthly: null,
+    yearly: null
+};
 
 // HTML escape helper to prevent XSS
 const escapeHtml = (str) => {
@@ -26,6 +47,110 @@ const escapeHtml = (str) => {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 };
+
+function triggerValueBump(el) {
+    if (!el) return;
+    el.classList.remove('value-bump');
+    void el.offsetWidth;
+    el.classList.add('value-bump');
+}
+
+function formatDateDisplay(dateStr) {
+    if (!dateStr) return '--';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[1]}/${parts[2]}/${parts[0]}`;
+}
+
+function updateSummary() {
+    if (!summaryEls.monthly) return;
+
+    const monthlyText = `$${summaryState.monthlyTotal.toFixed(2)}`;
+    const yearlyText = `$${summaryState.yearlyTotal.toFixed(2)}`;
+
+    if (summaryEls.monthly.textContent !== monthlyText) {
+        summaryEls.monthly.textContent = monthlyText;
+        triggerValueBump(summaryEls.monthly);
+    }
+
+    if (summaryEls.yearly.textContent !== yearlyText) {
+        summaryEls.yearly.textContent = yearlyText;
+        triggerValueBump(summaryEls.yearly);
+    }
+
+    if (summaryEls.approval) {
+        summaryEls.approval.textContent = summaryState.hasOverride ? 'Approval required' : 'Not required';
+        summaryEls.approval.classList.toggle('summary-chip--warning', summaryState.hasOverride);
+        summaryEls.approval.classList.toggle('summary-chip--ok', !summaryState.hasOverride);
+    }
+
+    const employerInput = document.getElementById('employerName');
+    if (summaryEls.employer) {
+        summaryEls.employer.textContent = employerInput && employerInput.value ? employerInput.value : '--';
+    }
+
+    const employeesInput = document.getElementById('totalEmployees');
+    if (summaryEls.employees) {
+        summaryEls.employees.textContent = employeesInput && employeesInput.value ? employeesInput.value : '0';
+    }
+
+    const ownerSelect = document.getElementById('assignedTo');
+    if (summaryEls.owner) {
+        let ownerText = 'Not selected';
+        if (ownerSelect && ownerSelect.selectedIndex > 0) {
+            ownerText = ownerSelect.options[ownerSelect.selectedIndex].text;
+        }
+        summaryEls.owner.textContent = ownerText;
+    }
+
+    const effectiveDateInput = document.getElementById('effectiveDate');
+    if (summaryEls.effectiveDate) {
+        summaryEls.effectiveDate.textContent = formatDateDisplay(effectiveDateInput ? effectiveDateInput.value : '');
+    }
+
+    const proposalDateInput = document.getElementById('proposalDate');
+    if (summaryEls.proposalDate) {
+        summaryEls.proposalDate.textContent = formatDateDisplay(proposalDateInput ? proposalDateInput.value : '');
+    }
+
+    if (summaryEls.productsList) {
+        summaryEls.productsList.innerHTML = '';
+        let count = 0;
+        const mainRows = productBody ? productBody.querySelectorAll('.product-main-row') : [];
+        mainRows.forEach(row => {
+            const productSelect = row.querySelector('.product-select');
+            if (!productSelect || !productSelect.value) return;
+            count += 1;
+
+            const item = document.createElement('div');
+            item.className = 'summary-product-item';
+
+            const name = document.createElement('span');
+            name.className = 'summary-product-name';
+            name.textContent = productSelect.value;
+
+            const price = document.createElement('span');
+            price.className = 'summary-product-price';
+            const rowTotal = row.dataset.rowTotal ? Number(row.dataset.rowTotal) : 0;
+            price.textContent = `$${rowTotal.toFixed(2)}`;
+
+            item.appendChild(name);
+            item.appendChild(price);
+            summaryEls.productsList.appendChild(item);
+        });
+
+        if (summaryEls.productsCount) {
+            summaryEls.productsCount.textContent = String(count);
+        }
+
+        if (count === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'summary-empty';
+            empty.textContent = 'No products selected yet.';
+            summaryEls.productsList.appendChild(empty);
+        }
+    }
+}
 
 // --- Broker Lookup Management ---
 function initBrokerLookup() {
@@ -157,6 +282,7 @@ async function loadConfig() {
         if (productBody) {
             productBody.innerHTML = '';
             productBody.appendChild(createProductRow());
+            updateGrandTotal();
         }
     } catch (error) {
         console.error('Error loading config:', error);
@@ -222,8 +348,21 @@ function calculateRowTotal(row, bundled) {
             total = min;
         }
 
-        totalCell.textContent = '$' + total.toFixed(2);
+        const nextTotalText = '$' + total.toFixed(2);
+        row.dataset.rowTotal = total.toFixed(2);
+        if (totalCell && totalCell.textContent !== nextTotalText) {
+            totalCell.textContent = nextTotalText;
+            triggerValueBump(totalCell);
+        } else if (totalCell) {
+            totalCell.textContent = nextTotalText;
+        }
         return total;
+    }
+    if (row) {
+        row.dataset.rowTotal = '0.00';
+    }
+    if (totalCell) {
+        totalCell.textContent = '$0.00';
     }
     return 0;
 }
@@ -243,17 +382,40 @@ function updateGrandTotal() {
         }
     });
 
-    grandTotalEl.textContent = '$' + total.toFixed(2);
+    const nextMonthly = Number(total.toFixed(2));
+    const nextYearly = Number((total * 12).toFixed(2));
+
+    if (grandTotalEl) {
+        const monthlyText = `$${nextMonthly.toFixed(2)}`;
+        if (totalState.monthly !== nextMonthly) {
+            grandTotalEl.textContent = monthlyText;
+            triggerValueBump(grandTotalEl);
+            totalState.monthly = nextMonthly;
+        } else {
+            grandTotalEl.textContent = monthlyText;
+        }
+    }
 
     if (yearlyTotalEl) {
-        const yearlyTotal = total * 12;
-        yearlyTotalEl.textContent = '$' + yearlyTotal.toFixed(2);
+        const yearlyText = `$${nextYearly.toFixed(2)}`;
+        if (totalState.yearly !== nextYearly) {
+            yearlyTotalEl.textContent = yearlyText;
+            triggerValueBump(yearlyTotalEl);
+            totalState.yearly = nextYearly;
+        } else {
+            yearlyTotalEl.textContent = yearlyText;
+        }
     }
 
     const approvalNotice = document.getElementById('approvalNotice');
     if (approvalNotice) {
         approvalNotice.style.display = hasOverride ? 'flex' : 'none';
     }
+
+    summaryState.monthlyTotal = nextMonthly;
+    summaryState.yearlyTotal = nextYearly;
+    summaryState.hasOverride = hasOverride;
+    updateSummary();
 }
 
 function createProductRow() {
@@ -272,6 +434,15 @@ function createProductRow() {
     const waiveMinCheckbox = mainRow.querySelector('.waive-min-checkbox');
     const removeBtn = mainRow.querySelector('.remove-btn');
     const justificationInput = justificationRow.querySelector('.justification-input');
+
+    if (mainRow) {
+        mainRow.classList.add('row-enter');
+        setTimeout(() => mainRow.classList.remove('row-enter'), 250);
+    }
+    if (justificationRow) {
+        justificationRow.classList.add('row-enter');
+        setTimeout(() => justificationRow.classList.remove('row-enter'), 250);
+    }
 
     // Populate selects
     if (productSelect) {
@@ -302,9 +473,15 @@ function createProductRow() {
 
     if (removeBtn) {
         removeBtn.addEventListener('click', () => {
-            mainRow.remove();
-            if (justificationRow) justificationRow.remove();
-            updateGrandTotal();
+            mainRow.classList.add('row-exit');
+            if (justificationRow) {
+                justificationRow.classList.add('row-exit');
+            }
+            setTimeout(() => {
+                mainRow.remove();
+                if (justificationRow) justificationRow.remove();
+                updateGrandTotal();
+            }, 200);
         });
     }
 
@@ -355,6 +532,7 @@ async function loadOwners() {
             opt.selected = true;
             opt.textContent = 'No owners found';
             ownerSelect.appendChild(opt);
+            updateSummary();
             return;
         }
 
@@ -372,6 +550,7 @@ async function loadOwners() {
             ownerSelect.appendChild(opt);
         });
         console.log(`Populated ${users.length} owners in dropdown.`);
+        updateSummary();
     } catch (error) {
         console.error('Detailed error loading owners:', error);
         ownerSelect.innerHTML = '';
@@ -381,6 +560,7 @@ async function loadOwners() {
         errOpt.selected = true;
         errOpt.textContent = 'Error loading owners';
         ownerSelect.appendChild(errOpt);
+        updateSummary();
     }
 }
 // Set default dates on load
@@ -393,9 +573,16 @@ function setDefaultDates() {
     // Note: effectiveDate is usually a future date, so we leave it to the user but could default to next month
 }
 // Initialize Portal
+const opportunityForm = document.getElementById('opportunityForm');
+if (opportunityForm) {
+    opportunityForm.addEventListener('input', () => updateSummary());
+    opportunityForm.addEventListener('change', () => updateSummary());
+}
+
 loadConfig().then(() => {
     setDefaultDates();
     loadOwners();
+    updateSummary();
 });
 
 document.getElementById('opportunityForm').addEventListener('submit', async (e) => {
@@ -481,6 +668,7 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         },
         products: products, // Sent for backend PDF generation and justifications
         brokerAgency: data.brokerAgency, // Passed for Firestore storage
+        proposalMessage: data.proposalMessage || '',
         customFields: [
             { id: 'TCajUYyGFfxNawfFVHzH', field_value: formattedEffectiveDate }, // rfp_effective_date: use formatted mm-dd-yyyy
             { id: 'qDAjtgB8BnOe44mmBxZJ', field_value: formattedProposalDate }, // proposal_date: use formatted mm-dd-yyyy
@@ -535,15 +723,20 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
             }
             formSection.style.display = 'none';
             successMessage.style.display = 'block';
+            document.body.classList.add('success-mode');
+            launchConfetti();
 
             document.getElementById('downloadProposal').addEventListener('click', () => {
                 generateProposalPDF({
                     ...data,
+                    contactId: result.contactId || result.id, // Support different response formats
+                    assignedTo: result.assignedTo,
                     businessName: data.employerName,
                     effectiveDate: formattedEffectiveDate,
                     proposalDate: formattedProposalDate,
                     opportunityName,
-                    products
+                    products,
+                    proposalMessage: data.proposalMessage || ''
                 });
             });
         } else {
@@ -552,6 +745,7 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
             productBody.innerHTML = '';
             productBody.appendChild(createProductRow());
             updateGrandTotal();
+            document.body.classList.remove('success-mode');
         }
     } catch (error) {
         console.error('Error creating opportunity:', error);
@@ -574,9 +768,39 @@ window.resetPortal = function () {
         productBody.appendChild(createProductRow());
         updateGrandTotal();
     }
+    const messageInput = document.getElementById('proposalMessage');
+    if (messageInput) messageInput.value = '';
     if (successMessage) successMessage.style.display = 'none';
     if (formSection) formSection.style.display = 'block';
+    document.body.classList.remove('success-mode');
+    updateSummary();
 };
+
+function launchConfetti() {
+    if (typeof window.confetti !== 'function') return;
+    const endTime = Date.now() + 700;
+    const colors = ['#00A3E0', '#78BE20', '#002D72'];
+
+    (function frame() {
+        window.confetti({
+            particleCount: 4,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0.05, y: 0.6 },
+            colors: colors
+        });
+        window.confetti({
+            particleCount: 4,
+            angle: 120,
+            spread: 55,
+            origin: { x: 0.95, y: 0.6 },
+            colors: colors
+        });
+        if (Date.now() < endTime) {
+            requestAnimationFrame(frame);
+        }
+    })();
+}
 
 async function generateProposalPDF(formData) {
     try {

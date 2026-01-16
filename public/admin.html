@@ -15,93 +15,97 @@
 
 <body class="admin-page">
     <div class="container full-width">
-        <div class="header" style="flex-direction: row; justify-content: space-between; align-items: center;">
-            <div>
-                <h1>Admin Dashboard</h1>
-                <p class="subtitle">Sales Opportunity Submissions</p>
-            </div>
-            <a href="new-opportunity.html" class="btn secondary-btn">New Opportunity</a>
-        </div>
-
-        <div class="tabs-container" style="margin-bottom: 20px;">
-            <button class="btn tab-btn active" data-tab="dashboard">Dashboard</button>
-            <button class="btn tab-btn" data-tab="opportunities">Opportunities</button>
-            <button class="btn tab-btn" data-tab="auditLogs">Audit Log</button>
-        </div>
-
-        <!-- Dashboard View (Charts) -->
-        <div id="dashboardView" class="view-section" style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div class="shadow-container"
-                    style="flex: 2; min-width: 400px; padding: 20px; background: white; border-radius: 8px;">
-                    <h3>Opportunities Trend</h3>
-                    <canvas id="trendChart"></canvas>
+        <div class="admin-content">
+            <div class="header" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>Admin Dashboard</h1>
+                    <p class="subtitle">Sales Opportunity Submissions</p>
                 </div>
-                <div class="shadow-container"
-                    style="flex: 1; min-width: 300px; padding: 20px; background: white; border-radius: 8px;">
-                    <h3>Status Distribution</h3>
-                    <canvas id="statusChart"></canvas>
+                <a href="new-opportunity.html" class="btn secondary-btn">New Opportunity</a>
+            </div>
+
+            <div class="tabs-container" style="margin-bottom: 20px;">
+                <button class="btn tab-btn active" data-tab="dashboard">Dashboard</button>
+                <button class="btn tab-btn" data-tab="opportunities">Opportunities</button>
+                <button class="btn tab-btn" data-tab="auditLogs">Audit Log</button>
+            </div>
+
+            <!-- Dashboard View (Charts) -->
+            <div id="dashboardView" class="view-section"
+                style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="shadow-container"
+                        style="flex: 2; min-width: 400px; padding: 20px; background: white; border-radius: 8px;">
+                        <h3>Opportunities Trend</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="shadow-container"
+                        style="flex: 1; min-width: 300px; padding: 20px; background: white; border-radius: 8px;">
+                        <h3>Status Distribution</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <!-- KPI Cards could go here -->
-        </div>
-
-        <!-- Opportunities Grid.js View -->
-        <div id="opportunitiesView" class="view-section"
-            style="display: none; flex: 1; flex-direction: column; min-height: 0;">
-            <div id="oppGrid" style="flex: 1; overflow-y: auto; background: white; border-radius: 8px;"></div>
-        </div>
-
-        <div id="auditLogsView" class="view-section"
-            style="display: none; flex: 1; flex-direction: column; min-height: 0;">
-
-            <!-- Filters & Actions -->
-            <div class="filters-container"
-                style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
-                <select id="filterAction" style="width: auto; padding: 8px;">
-                    <option value="">All Actions</option>
-                    <option value="CREATE">Create</option>
-                    <option value="UPDATE">Update</option>
-                    <option value="DELETE">Delete</option>
-                </select>
-                <select id="filterStatus" style="width: auto; padding: 8px;">
-                    <option value="">All Statuses</option>
-                    <option value="SUCCESS">Success</option>
-                    <option value="FAILURE">Failure</option>
-                </select>
-                <input type="text" id="filterResourceId" placeholder="Resource ID..."
-                    style="width: auto; flex: 1; min-width: 150px; padding: 8px;">
-                <button id="applyFiltersBtn" class="btn secondary-btn" style="width: auto; margin: 0;">Filter</button>
-                <button id="exportCsvBtn" class="btn secondary-btn"
-                    style="width: auto; margin: 0; border-color: var(--primary); color: var(--primary);">Export
-                    CSV</button>
+                <!-- KPI Cards could go here -->
             </div>
 
-            <div class="table-container shadow-container" style="flex: 1; overflow-y: auto;">
-                <table id="auditTable">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Status</th>
-                            <th>Actor</th>
-                            <th>Action</th>
-                            <th>Resource Type</th>
-                            <th>Resource ID</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody id="auditBody">
-                        <tr>
-                            <td colspan="6" class="text-center">Loading audit logs...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Opportunities Grid.js View -->
+            <div id="opportunitiesView" class="view-section"
+                style="display: none; flex: 1; flex-direction: column; min-height: 0;">
+                <div id="oppGrid" style="flex: 1; overflow-y: auto; background: white; border-radius: 8px;"></div>
             </div>
-            <div class="pagination-controls"
-                style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
-                <button id="prevPageBtn" class="btn secondary-btn" style="width: auto;" disabled>Previous</button>
-                <span id="pageInfo">Page 1</span>
-                <button id="nextPageBtn" class="btn secondary-btn" style="width: auto;">Next</button>
+
+            <div id="auditLogsView" class="view-section"
+                style="display: none; flex: 1; flex-direction: column; min-height: 0;">
+
+                <!-- Filters & Actions -->
+                <div class="filters-container"
+                    style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                    <select id="filterAction" style="width: auto; padding: 8px;">
+                        <option value="">All Actions</option>
+                        <option value="CREATE">Create</option>
+                        <option value="UPDATE">Update</option>
+                        <option value="DELETE">Delete</option>
+                    </select>
+                    <select id="filterStatus" style="width: auto; padding: 8px;">
+                        <option value="">All Statuses</option>
+                        <option value="SUCCESS">Success</option>
+                        <option value="FAILURE">Failure</option>
+                    </select>
+                    <input type="text" id="filterResourceId" placeholder="Resource ID..."
+                        style="width: auto; flex: 1; min-width: 150px; padding: 8px;">
+                    <button id="applyFiltersBtn" class="btn secondary-btn"
+                        style="width: auto; margin: 0;">Filter</button>
+                    <button id="exportCsvBtn" class="btn secondary-btn"
+                        style="width: auto; margin: 0; border-color: var(--primary); color: var(--primary);">Export
+                        CSV</button>
+                </div>
+
+                <div class="table-container shadow-container" style="flex: 1; overflow-y: auto;">
+                    <table id="auditTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                                <th>Resource Type</th>
+                                <th>Resource ID</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditBody">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading audit logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls"
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+                    <button id="prevPageBtn" class="btn secondary-btn" style="width: auto;" disabled>Previous</button>
+                    <span id="pageInfo">Page 1</span>
+                    <button id="nextPageBtn" class="btn secondary-btn" style="width: auto;">Next</button>
+                </div>
             </div>
         </div>
     </div>

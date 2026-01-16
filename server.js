@@ -9,7 +9,24 @@ require('dotenv').config();
 
 // --- Shared Logic ---
 const { sanitizeString, sanitizeEmail, sanitizeNumber, getGHLHeaders } = require('./shared/utils');
+const { GHLService } = require('./shared/ghl-service');
 const productsConfig = require('./shared/products.json');
+
+// --- GHL Service Instance (lazy initialization) ---
+let ghlServiceInstance = null;
+const GHL_LOCATION_ID = 'NFWWwK7qd0rXqtNyOINy';
+
+async function getGHLService(apiKey) {
+    if (!ghlServiceInstance || ghlServiceInstance.apiKey !== apiKey) {
+        ghlServiceInstance = new GHLService(apiKey, GHL_LOCATION_ID, {
+            useMCP: true,
+            useRateLimiting: true,
+            retryOnError: true
+        });
+        await ghlServiceInstance.initialize();
+    }
+    return ghlServiceInstance;
+}
 
 // Initialize Firebase Admin (Auto-detects credentials or emulator)
 if (!admin.apps.length) {
@@ -118,6 +135,7 @@ const sanitizeOpportunityData = (data) => {
     sanitized.source = sanitizeString(data.source, 100);
     sanitized.employerName = sanitizeString(data.employerName, 200);
     sanitized.brokerAgency = sanitizeString(data.brokerAgency, 200);
+    sanitized.proposalMessage = sanitizeString(data.proposalMessage, 500);
     sanitized.monetaryValue = sanitizeNumber(data.monetaryValue);
 
     // Sanitize contact
@@ -210,6 +228,27 @@ async function createProposalPDF(data, outputPath) {
             if (!prod) return '-';
             if (prod.waivedMin) return 'Waived';
             return prod.minFee ? `$${parseFloat(prod.minFee).toFixed(2)}` : '-';
+        };
+
+        const wrapText = (text, maxWidth, fontSize, font) => {
+            const cleaned = String(text || '').replace(/\s+/g, ' ').trim();
+            if (!cleaned) return [];
+            const words = cleaned.split(' ');
+            const lines = [];
+            let current = '';
+
+            words.forEach(word => {
+                const testLine = current ? `${current} ${word}` : word;
+                if (font.widthOfTextAtSize(testLine, fontSize) <= maxWidth) {
+                    current = testLine;
+                } else {
+                    if (current) lines.push(current);
+                    current = word;
+                }
+            });
+
+            if (current) lines.push(current);
+            return lines;
         };
 
         // --- PAGE 16 ---
@@ -325,6 +364,20 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page17, y, 'Payroll/Contribution File', '-', fileDate);
         y = drawRow(page17, y, 'COBRA Initial Notices', '-', selection.cobra ? effDate : '-');
 
+        const customMessage = String(data.proposalMessage || '').trim();
+        if (customMessage) {
+            const lineHeight = 12;
+            y -= 18;
+            page17.drawText('Custom Message', { x: 50, y, size: 10, font: boldFont, color: textColor });
+            y -= 14;
+            const lines = wrapText(customMessage, 500, 9, regularFont);
+            const maxLines = Math.max(Math.floor((y - 40) / lineHeight), 0);
+            lines.slice(0, maxLines).forEach(line => {
+                page17.drawText(line, { x: 50, y, size: 9, font: regularFont, color: textColor });
+                y -= lineHeight;
+            });
+        }
+
         // Page 17 Footer
         page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
 
@@ -339,7 +392,7 @@ async function createProposalPDF(data, outputPath) {
 
 // --- GHL Integration Helper ---
 
-async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, justifications = '') {
+async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, ghlService, justifications = '') {
     try {
         const stats = fs.statSync(filePath);
         const fileName = path.basename(filePath);
@@ -351,29 +404,12 @@ async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, j
             knownLength: stats.size
         });
 
-        const uploadResponse = await axios.post(
-            `https://services.leadconnectorhq.com/medias/upload-file`,
-            form,
-            {
-                headers: {
-                    ...form.getHeaders(),
-                    ...getGHLHeaders(GHL_API_KEY)
-                }
-            }
-        );
+        const uploadResponse = await ghlService.uploadFile(form);
 
-        const fileUrl = uploadResponse.data.url;
+        const fileUrl = uploadResponse.url || uploadResponse.data?.url;
         console.log('File uploaded to GHL:', fileUrl);
 
-        await axios.post(
-            `https://services.leadconnectorhq.com/contacts/${contactId}/notes`,
-            {
-                body: `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${fileUrl})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`,
-            },
-            {
-                headers: getGHLHeaders(GHL_API_KEY)
-            }
-        );
+        await ghlService.addContactNote(contactId, `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${fileUrl})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`);
 
         console.log('Proposal linked to Opportunity via Note');
         return fileUrl;
@@ -383,7 +419,7 @@ async function uploadFileToGHL(filePath, locationId, opportunityId, contactId, j
     }
 }
 
-async function sendApprovalEmail(data, opportunityId) {
+async function sendApprovalEmail(data, opportunityId, ghlService) {
     try {
         const joshCollinsContactId = '357NYkROmrFIMPiAdpUc';
         const productsWithOverride = (data.products || []).filter(p => p.isOverride);
@@ -478,30 +514,113 @@ async function sendApprovalEmail(data, opportunityId) {
             message: `Action Required: Price override approval for ${data.name}. Visit the portal to review.`
         };
 
-        const response = await axios.post(
-            `https://services.leadconnectorhq.com/conversations/messages`,
-            payload,
-            { headers: getGHLHeaders(GHL_API_KEY) }
-        );
+        const response = await ghlService.sendMessage(payload);
 
-        console.log('Approval email sent to Josh Collins:', response.data);
-        return response.data;
+        console.log('Approval email sent to Josh Collins:', response);
+        return response;
     } catch (error) {
         console.error('Error sending approval email:', error.response?.data || error.message);
+    }
+}
+
+/**
+ * Sends a proposal email to the Broker and CCs the Opportunity Owner
+ */
+async function sendProposalEmail(data, pdfUrl, ghlService) {
+    try {
+        const contactId = data.contactId;
+        const assignedTo = data.assignedTo;
+        const brokerEmail = data.contactEmail || data.contact?.email || data.brokerEmail;
+        const businessName = data.employerName || data.businessName || data.contact?.companyName || 'Group';
+
+        if (!contactId || !brokerEmail) {
+            console.warn('[sendProposalEmail] Missing contactId or brokerEmail, skipping email.');
+            return;
+        }
+
+        // 1. Fetch Owner Email
+        let ownerEmail = null;
+        if (assignedTo) {
+            try {
+                const users = await ghlService.getUsers();
+                const userList = users.users || users;
+                const owner = userList.find(u => u.id === assignedTo);
+                if (owner) {
+                    ownerEmail = owner.email;
+                    console.log(`[sendProposalEmail] Found owner email: ${ownerEmail}`);
+                }
+            } catch (userErr) {
+                console.error('[sendProposalEmail] Failed to fetch owner email:', userErr.message);
+            }
+        }
+
+        const emailBody = `
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+                <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="background-color: #003366; color: white; padding: 25px; text-align: center;">
+                        <h2 style="margin: 0; font-weight: 300; letter-spacing: 1px;">PRICING PROPOSAL</h2>
+                    </div>
+                    <div style="padding: 30px;">
+                        <p style="font-size: 16px;">Hello,</p>
+                        <p style="font-size: 16px;">Please find the pricing proposal for <strong>${businessName}</strong> attached or via the link below:</p>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${pdfUrl}" 
+                               style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                                VIEW PROPOSAL PDF
+                            </a>
+                        </div>
+
+                        <p style="font-size: 14px; color: #666;">If you have any questions regarding this proposal, please reach out to your NueSynergy representative.</p>
+                        
+                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                            <p style="font-size: 14px;"><strong>Proposal Details:</strong><br>
+                            Effective Date: ${data.effectiveDate || 'N/A'}<br>
+                            Group: ${businessName}</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="max-width: 600px; margin: 0 auto; color: #94a3b8; padding: 20px; text-align: center; font-size: 11px;">
+                    © ${new Date().getFullYear()} NueSynergy. All rights reserved. <br>
+                    This is an automated delivery from the NueSynergy Sales Intake Portal.
+                </div>
+            </body>
+            </html>
+        `;
+
+        const payload = {
+            type: 'Email',
+            contactId: contactId,
+            emailFrom: 'sales-intake@nuesynergy.com',
+            subject: `Pricing Proposal: ${businessName}`,
+            html: emailBody,
+            message: `Please find the pricing proposal for ${businessName} here: ${pdfUrl}`
+        };
+
+        // Add CC if owner found
+        if (ownerEmail) {
+            payload.cc = [ownerEmail];
+        }
+
+        const response = await ghlService.sendMessage(payload);
+        console.log('[sendProposalEmail] Proposal email sent successfully:', response);
+        return response;
+    } catch (error) {
+        console.error('[sendProposalEmail] Error sending proposal email:', error.response?.data || error.message);
     }
 }
 
 // Fetch users for the owner dropdown
 app.get('/api/users', async (req, res) => {
     try {
-        const locationId = 'NFWWwK7qd0rXqtNyOINy';
-        console.log(`[Users API] Requesting users for location: ${locationId}`);
+        const ghlService = await getGHLService(GHL_API_KEY);
+        console.log(`[Users API] Requesting users for location: ${GHL_LOCATION_ID}`);
 
-        const response = await axios.get(`https://services.leadconnectorhq.com/users/?locationId=${locationId}`, {
-            headers: getGHLHeaders(GHL_API_KEY)
-        });
+        const response = await ghlService.getUsers();
 
-        const users = response.data.users || response.data;
+        const users = response.users || response;
         console.log(`[Users API] Successfully fetched ${Array.isArray(users) ? users.length : 0} users.`);
         res.json(users);
     } catch (error) {
@@ -516,16 +635,13 @@ app.get('/api/users', async (req, res) => {
 // Fetch contacts for broker lookup
 app.get('/api/contacts', async (req, res) => {
     try {
-        const locationId = 'NFWWwK7qd0rXqtNyOINy';
         const query = req.query.query || '';
-        console.log(`[Contacts API] Searching contacts for location: ${locationId}, query: ${query}`);
+        const ghlService = await getGHLService(GHL_API_KEY);
+        console.log(`[Contacts API] Searching contacts for location: ${GHL_LOCATION_ID}, query: ${query}`);
 
-        // Using GET /contacts/ as it supports query and is known working in this project
-        const response = await axios.get(`https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=${encodeURIComponent(query)}&limit=50`, {
-            headers: getGHLHeaders(GHL_API_KEY)
-        });
+        const response = await ghlService.searchContacts(query, { limit: 50 });
 
-        const contacts = response.data.contacts || [];
+        const contacts = response.contacts || [];
         console.log(`[Contacts API] Successfully fetched ${contacts.length} contacts.`);
         res.json(contacts);
     } catch (error) {
@@ -561,31 +677,27 @@ app.post('/api/create-opportunity', async (req, res) => {
     };
 
     try {
+        const ghlService = await getGHLService(GHL_API_KEY);
         console.log('--- Processing New Opportunity Request ---');
         console.log('Request Payload (sanitized):', JSON.stringify(data, null, 2));
 
         // 1. Establish ContactId atomically via Upsert
         let contactId = data.contactId;
         if (!contactId && data.contact) {
-            console.log('Upserting Contact (Local Proxy)...');
+            console.log('Upserting Contact via GHLService...');
             const upsertPayload = {
                 firstName: data.contact.firstName || data.contact.name.split(' ')[0],
                 lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
                 email: data.contact.email,
-                companyName: data.contact.companyName,
-                locationId: locationId
+                companyName: data.contact.companyName
             };
 
-            const upsertRes = await axios.post(
-                'https://services.leadconnectorhq.com/contacts/upsert',
-                upsertPayload,
-                { headers: getGHLHeaders(GHL_API_KEY) }
-            );
+            const upsertRes = await ghlService.upsertContact(upsertPayload);
 
-            contactId = upsertRes.data.contact.id;
-            const isNew = upsertRes.data.new;
+            contactId = upsertRes.contact.id;
+            const isNew = upsertRes.new;
 
-            console.log(`${isNew ? 'Created' : 'Updated'} contact via Upsert: ${contactId}`);
+            console.log(`${isNew ? 'Created' : 'Updated'} contact via GHLService: ${contactId}`);
 
             if (isNew) {
                 await logAudit('CREATE', 'Contact', contactId, upsertPayload, req, 'SUCCESS', actor);
@@ -604,22 +716,21 @@ app.post('/api/create-opportunity', async (req, res) => {
             pipelineStageId: data.stageId,
             status: data.status || 'open',
             contactId: contactId,
-            locationId: locationId,
             assignedTo: data.assignedTo,
             monetaryValue: data.monetaryValue,
             source: data.source,
             customFields: data.customFields
         };
 
-        console.log('Opportunity Payload (Local Proxy):', JSON.stringify(opportunityPayload, null, 2));
+        console.log('Opportunity Payload:', JSON.stringify(opportunityPayload, null, 2));
 
-        const oppRes = await axios.post('https://services.leadconnectorhq.com/opportunities/', opportunityPayload, { headers: getGHLHeaders(GHL_API_KEY) });
+        const oppRes = await ghlService.createOpportunity(opportunityPayload);
 
-        console.log('GHL Opportunity Response (Local Proxy):', JSON.stringify(oppRes.data, null, 2));
+        console.log('GHL Opportunity Response:', JSON.stringify(oppRes, null, 2));
 
-        const opportunity = oppRes.data.opportunity || oppRes.data;
+        const opportunity = oppRes.opportunity || oppRes;
         if (!opportunity || !opportunity.id) {
-            throw new Error('GHL failed to return an opportunity ID in the local proxy response.');
+            throw new Error('GHL failed to return an opportunity ID in the service response.');
         }
         console.log('Opportunity Created Successfully!');
 
@@ -650,7 +761,8 @@ app.post('/api/create-opportunity', async (req, res) => {
                     source: data.source || data.customFields.find(f => f.id === '4Ft4xkId76QFmogGxQLT' || f.key === 'opportunity.opportunity_source' || f.key === 'opportunity.source')?.field_value,
                     currentAdministrator: data.customFields.find(f => f.id === 'gG9uknunlZBamXsF5Ynu' || f.key === 'opportunity.current_administrator')?.field_value,
                     benAdminSystem: data.customFields.find(f => f.id === 'FbHjdv6IH9saWvWxD9qk' || f.key === 'opportunity.ben_admin_system')?.field_value,
-                    postalCode: data.customFields.find(f => f.id === 'RjgwrcO6mdOKu80HsZA2' || f.key === 'opportunity.postal_code')?.field_value || ''
+                    postalCode: data.customFields.find(f => f.id === 'RjgwrcO6mdOKu80HsZA2' || f.key === 'opportunity.postal_code')?.field_value || '',
+                    proposalMessage: data.proposalMessage || ''
                 },
                 assignment: {
                     assignedToUser: data.assignedTo
@@ -695,34 +807,41 @@ app.post('/api/create-opportunity', async (req, res) => {
                 effectiveDate: data.customFields.find(f => f.id === 'TCajUYyGFfxNawfFVHzH' || f.key === 'opportunity.rfp_effective_date')?.field_value,
                 proposalDate: data.customFields.find(f => f.id === 'qDAjtgB8BnOe44mmBxZJ' || f.key === 'opportunity.proposal_date')?.field_value,
                 products: data.products,
-                justifications: justifications
+                justifications: justifications,
+                proposalMessage: data.proposalMessage || ''
             };
-
             await createProposalPDF(pdfData, filePath);
-            await uploadFileToGHL(filePath, locationId, opportunity.id, contactId, justifications);
+            // In local dev, we don't always have a real GHL Service with media upload working perfectly
+            // but we'll try if there is a contactId
+            if (contactId) {
+                try {
+                    const stats = fs.statSync(filePath);
+                    const form = new FormData();
+                    form.append('file', fs.createReadStream(filePath), { filename: fileName, contentType: 'application/pdf', knownLength: stats.size });
+
+                    const uploadRes = await ghlService.uploadFile(form);
+                    await ghlService.addContactNote(contactId,
+                        `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${uploadRes.url})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`
+                    );
+                } catch (pdfErr) {
+                    console.error('Automated PDF Upload Failed:', pdfErr.message);
+                }
+            }
         } catch (pdfErr) {
             console.error('Automated PDF Generation/Upload Failed:', pdfErr.message);
         }
 
         // 5. Send Approval Email (Independent of PDF success)
         try {
-            // Debug Logging for Approval
             const approvalField = data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval');
-            console.log('DEBUG: Approval Field:', JSON.stringify(approvalField, null, 2));
-            console.log('DEBUG: Custom Fields:', JSON.stringify(data.customFields, null, 2));
-            console.log('DEBUG: Products with Override:', JSON.stringify(data.products.filter(p => p.isOverride), null, 2));
-
             if (approvalField?.field_value === 'Yes') {
-                console.log('DEBUG: Triggering approval email...');
-                await sendApprovalEmail(data, opportunity.id);
-            } else {
-                console.log('DEBUG: Approval condition not met.');
+                await sendApprovalEmail(data, opportunity.id, ghlService);
             }
         } catch (emailErr) {
             console.error('Approval Email Failed:', emailErr.message);
         }
 
-        res.json(oppRes.data);
+        res.json(oppRes);
 
     } catch (error) {
         console.error('ERROR:', error.response ? JSON.stringify(error.response.data) : error.message);
@@ -736,26 +855,6 @@ app.post('/api/create-opportunity', async (req, res) => {
             error: 'Failed to process request',
             details: error.response ? error.response.data : error.message
         });
-    }
-});
-
-// Endpoint for manual PDF generation (On-demand)
-app.post('/api/generate-pdf', async (req, res) => {
-    try {
-        console.log('Generating On-Demand PDF...');
-        const data = req.body;
-        const fileName = `Proposal_${Date.now()}.pdf`;
-        const tempDir = path.join(__dirname, 'temp');
-        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-        const outputPath = path.join(tempDir, fileName);
-
-        await createProposalPDF(data, outputPath);
-        res.download(outputPath, fileName, (err) => {
-            if (err) console.error('Error downloading file:', err);
-        });
-    } catch (error) {
-        console.error('PDF Generation Error:', error);
-        res.status(500).json({ error: 'Failed to generate PDF' });
     }
 });
 
@@ -777,6 +876,64 @@ app.get('/api/opportunities', async (req, res) => {
     } catch (error) {
         console.error('[Opportunities API] Error:', error.message);
         res.status(500).json({ error: 'Failed to fetch opportunities' });
+    }
+});
+
+// Update the generate-pdf endpoint to also handle sending emails if metadata is present
+app.post('/api/generate-pdf', async (req, res) => {
+    try {
+        console.log('Generating On-Demand PDF & Sending Email...');
+        const data = req.body;
+        const fileName = `Proposal_${data.employerName || data.businessName || 'Group'}_${Date.now()}.pdf`;
+        const tempDir = path.join(__dirname, 'temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+        const outputPath = path.join(tempDir, fileName);
+
+        // 1. Generate PDF
+        await createProposalPDF(data, outputPath);
+
+        // 2. Upload to GHL & Send Email (if metadata present)
+        if (data.contactId) {
+            try {
+                const ghlService = await getGHLService(GHL_API_KEY);
+                const stats = fs.statSync(outputPath);
+                const form = new FormData();
+                form.append('file', fs.createReadStream(outputPath), {
+                    filename: fileName,
+                    contentType: 'application/pdf',
+                    knownLength: stats.size
+                });
+
+                const uploadRes = await ghlService.uploadFile(form);
+                const pdfUrl = uploadRes.url;
+
+                console.log(`[PDF API] Uploaded to GHL: ${pdfUrl}`);
+
+                // Send Email to Broker/Contact and CC Owner
+                await sendProposalEmail(data, pdfUrl, ghlService);
+
+                // Add Note to Contact
+                await ghlService.addContactNote(data.contactId,
+                    `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
+                );
+
+                await logAudit('SEND_PROPOSAL', 'Contact', data.contactId, {
+                    employer: data.employerName || data.businessName,
+                    pdfUrl: pdfUrl
+                }, req);
+
+            } catch (emailErr) {
+                console.error('[PDF API] Email/Upload failed:', emailErr.message);
+            }
+        }
+
+        // 3. Trigger Download
+        res.download(outputPath, fileName, (err) => {
+            if (err) console.error('Error downloading file:', err);
+        });
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate PDF' });
     }
 });
 
