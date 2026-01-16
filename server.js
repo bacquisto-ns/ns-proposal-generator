@@ -1,5 +1,4 @@
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -8,7 +7,7 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 
 // --- Shared Logic ---
-const { sanitizeString, sanitizeEmail, sanitizeNumber, getGHLHeaders } = require('./shared/utils');
+const { sanitizeString, sanitizeEmail, sanitizeNumber } = require('./shared/utils');
 const { GHLService } = require('./shared/ghl-service');
 const productsConfig = require('./shared/products.json');
 
@@ -524,36 +523,72 @@ async function sendApprovalEmail(data, opportunityId, ghlService) {
     }
 }
 
+async function resolveContactEmail(data, ghlService) {
+    const email = data.contactEmail || data.contact?.email || data.brokerEmail || data.broker?.email;
+    if (email) return email;
+    if (!data.contactId) return null;
+
+    try {
+        const contactRes = await ghlService.getContact(data.contactId);
+        const contact = contactRes.contact || contactRes;
+        return contact?.email || null;
+    } catch (error) {
+        console.error('[resolveContactEmail] Failed to fetch contact email:', error.message);
+        return null;
+    }
+}
+
+async function resolveOwnerEmail(assignedTo, ghlService) {
+    if (!assignedTo) return null;
+    try {
+        const users = await ghlService.getUsers();
+        const userList = users.users || users;
+        const owner = userList.find(u => u.id === assignedTo);
+        return owner ? owner.email : null;
+    } catch (error) {
+        console.error('[resolveOwnerEmail] Failed to fetch owner email:', error.message);
+        return null;
+    }
+}
+
 /**
  * Sends a proposal email to the Broker and CCs the Opportunity Owner
  */
 async function sendProposalEmail(data, pdfUrl, ghlService) {
+    const result = {
+        ok: false,
+        brokerEmail: null,
+        ownerEmail: null,
+        error: null
+    };
+
     try {
-        const contactId = data.contactId;
-        const assignedTo = data.assignedTo;
-        const brokerEmail = data.contactEmail || data.contact?.email || data.brokerEmail;
-        const businessName = data.employerName || data.businessName || data.contact?.companyName || 'Group';
+        const contactId = data.contactId || data.ghl?.contactId;
+        const assignedTo = data.assignedTo || data.assignment?.assignedToUser;
+        const businessName = data.employerName || data.businessName || data.contact?.companyName || data.name || 'Group';
 
-        if (!contactId || !brokerEmail) {
-            console.warn('[sendProposalEmail] Missing contactId or brokerEmail, skipping email.');
-            return;
+        if (!contactId) {
+            result.error = 'missing_contact_id';
+            console.warn('[sendProposalEmail] Missing contactId, skipping email.');
+            return result;
         }
 
-        // 1. Fetch Owner Email
-        let ownerEmail = null;
-        if (assignedTo) {
-            try {
-                const users = await ghlService.getUsers();
-                const userList = users.users || users;
-                const owner = userList.find(u => u.id === assignedTo);
-                if (owner) {
-                    ownerEmail = owner.email;
-                    console.log(`[sendProposalEmail] Found owner email: ${ownerEmail}`);
-                }
-            } catch (userErr) {
-                console.error('[sendProposalEmail] Failed to fetch owner email:', userErr.message);
-            }
+        if (!pdfUrl) {
+            result.error = 'missing_pdf_url';
+            console.warn('[sendProposalEmail] Missing pdfUrl, skipping email.');
+            return result;
         }
+
+        const brokerEmail = await resolveContactEmail({ ...data, contactId }, ghlService);
+        result.brokerEmail = brokerEmail;
+        if (!brokerEmail) {
+            result.error = 'missing_broker_email';
+            console.warn('[sendProposalEmail] Missing broker email, skipping email.');
+            return result;
+        }
+
+        const ownerEmail = await resolveOwnerEmail(assignedTo, ghlService);
+        result.ownerEmail = ownerEmail;
 
         const emailBody = `
             <!DOCTYPE html>
@@ -601,17 +636,38 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
             message: `Please find the pricing proposal for ${businessName} here: ${pdfUrl}`
         };
 
-        // Add CC if owner found
         if (ownerEmail) {
             payload.cc = [ownerEmail];
         }
 
         const response = await ghlService.sendMessage(payload);
         console.log('[sendProposalEmail] Proposal email sent successfully:', response);
-        return response;
+        result.ok = true;
+        return result;
     } catch (error) {
         console.error('[sendProposalEmail] Error sending proposal email:', error.response?.data || error.message);
+        result.error = error.message;
+        return result;
     }
+}
+
+async function applyProposalEmailUpdate(docRef, result) {
+    if (!docRef || !result) return;
+
+    const update = {
+        'proposal.lastAttemptAt': admin.firestore.FieldValue.serverTimestamp(),
+        'proposal.attemptCount': admin.firestore.FieldValue.increment(1),
+        'proposal.brokerEmail': result.brokerEmail || null,
+        'proposal.ownerEmail': result.ownerEmail || null,
+        'proposal.lastError': result.ok ? null : (result.error || 'send_failed'),
+        'proposal.emailStatus': result.ok ? 'sent' : 'failed'
+    };
+
+    if (result.ok) {
+        update['proposal.sentAt'] = admin.firestore.FieldValue.serverTimestamp();
+    }
+
+    await docRef.update(update);
 }
 
 // Fetch users for the owner dropdown
@@ -744,7 +800,11 @@ app.post('/api/create-opportunity', async (req, res) => {
             status: data.status
         }, req, 'SUCCESS', actor);
 
+        const approvalField = data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval');
+        const requiresApproval = approvalField?.field_value === 'Yes';
+
         // 3. Dual-Write to Firestore
+        let firestoreDocRef = null;
         try {
             console.log('Saving to Firestore...');
             const firestoreData = {
@@ -775,8 +835,18 @@ app.post('/api/create-opportunity', async (req, res) => {
                     yearlyTotal: parseFloat(data.customFields.find(f => f.id === 'h4RmeiogDVZGhb0DEaia' || f.key === 'opportunity.yearly_total')?.field_value || '0')
                 },
                 approval: {
-                    requiresApproval: data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval')?.field_value === 'Yes',
-                    approverName: data.customFields.find(f => f.id === 'k29uFeF1SbZ5tIPSn7ro' || f.key === 'opportunity.approver_name')?.field_value
+                    requiresApproval: requiresApproval,
+                    approverName: data.customFields.find(f => f.id === 'k29uFeF1SbZ5tIPSn7ro' || f.key === 'opportunity.approver_name')?.field_value,
+                    status: requiresApproval ? 'pending' : 'not_required'
+                },
+                proposal: {
+                    pdfUrl: null,
+                    generatedAt: null,
+                    emailStatus: requiresApproval ? 'awaiting_approval' : 'pending',
+                    sentAt: null,
+                    lastAttemptAt: null,
+                    lastError: null,
+                    attemptCount: 0
                 },
                 ghl: {
                     locationId: locationId,
@@ -787,13 +857,13 @@ app.post('/api/create-opportunity', async (req, res) => {
                 }
             };
 
-            await admin.firestore().collection('opportunities').add(firestoreData);
+            firestoreDocRef = await admin.firestore().collection('opportunities').add(firestoreData);
             console.log('Saved to Firestore successfully.');
         } catch (fsError) {
             console.error('Firestore Save Failed:', fsError.message);
         }
 
-        // 4. Automated PDF Upload
+        // 4. Automated PDF Generation & Processing
         try {
             const tempDir = path.join(__dirname, 'temp');
             if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
@@ -812,36 +882,63 @@ app.post('/api/create-opportunity', async (req, res) => {
                 justifications: justifications,
                 proposalMessage: data.proposalMessage || ''
             };
+
+            console.log('Generating automated PDF...');
             await createProposalPDF(pdfData, filePath);
-            // In local dev, we don't always have a real GHL Service with media upload working perfectly
-            // but we'll try if there is a contactId
+
+            let pdfUrl = null;
             if (contactId) {
                 try {
                     const stats = fs.statSync(filePath);
                     const form = new FormData();
                     form.append('file', fs.createReadStream(filePath), { filename: fileName, contentType: 'application/pdf', knownLength: stats.size });
 
+                    console.log('Uploading PDF to GHL Media Library...');
                     const uploadRes = await ghlService.uploadFile(form);
-                    await ghlService.addContactNote(contactId,
-                        `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${uploadRes.url})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`
-                    );
+                    pdfUrl = uploadRes.url || uploadRes.data?.url;
+
+                    if (pdfUrl) {
+                        await ghlService.addContactNote(contactId,
+                            `NueSynergy Pricing Proposal generated automatically. [Link to Proposal](${pdfUrl})${justifications ? '\n\n**Price Override Justifications:**\n' + justifications : ''}`
+                        );
+                        console.log('Automated PDF linked to contact.');
+                    }
                 } catch (pdfErr) {
                     console.error('Automated PDF Upload Failed:', pdfErr.message);
                 }
             }
+
+            if (firestoreDocRef && pdfUrl) {
+                await firestoreDocRef.update({
+                    'proposal.pdfUrl': pdfUrl,
+                    'proposal.generatedAt': admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            // 5. Automation: Approval vs Direct Email
+            if (requiresApproval) {
+                console.log('Price override detected. Sending approval request to Josh Collins...');
+                await sendApprovalEmail(data, opportunity.id, ghlService);
+            } else if (pdfUrl) {
+                console.log('No approval required. Sending proposal email to Broker immediately...');
+                const sendResult = await sendProposalEmail({
+                    ...data,
+                    contactId: contactId
+                }, pdfUrl, ghlService);
+
+                if (sendResult.ok) {
+                    await ghlService.addContactNote(contactId,
+                        `Pricing Proposal sent to Broker via automated email. [Link to Proposal](${pdfUrl})`
+                    );
+                }
+
+                await applyProposalEmailUpdate(firestoreDocRef, sendResult);
+            }
+
         } catch (pdfErr) {
-            console.error('Automated PDF Generation/Upload Failed:', pdfErr.message);
+            console.error('Automated PDF Generation/Automation Failed:', pdfErr.message);
         }
 
-        // 5. Send Approval Email (Independent of PDF success)
-        try {
-            const approvalField = data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval');
-            if (approvalField?.field_value === 'Yes') {
-                await sendApprovalEmail(data, opportunity.id, ghlService);
-            }
-        } catch (emailErr) {
-            console.error('Approval Email Failed:', emailErr.message);
-        }
 
         res.json(oppRes);
 
@@ -907,21 +1004,25 @@ app.post('/api/generate-pdf', async (req, res) => {
                 });
 
                 const uploadRes = await ghlService.uploadFile(form);
-                const pdfUrl = uploadRes.url;
+                const pdfUrl = uploadRes.url || uploadRes.data?.url;
 
                 console.log(`[PDF API] Uploaded to GHL: ${pdfUrl}`);
 
                 // Send Email to Broker/Contact and CC Owner
-                await sendProposalEmail(data, pdfUrl, ghlService);
+                const sendResult = await sendProposalEmail(data, pdfUrl, ghlService);
 
                 // Add Note to Contact
-                await ghlService.addContactNote(data.contactId,
-                    `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
-                );
+                if (sendResult.ok) {
+                    await ghlService.addContactNote(data.contactId,
+                        `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
+                    );
+                }
 
                 await logAudit('SEND_PROPOSAL', 'Contact', data.contactId, {
                     employer: data.employerName || data.businessName,
-                    pdfUrl: pdfUrl
+                    pdfUrl: pdfUrl,
+                    status: sendResult.ok ? 'sent' : 'failed',
+                    error: sendResult.error || null
                 }, req);
 
             } catch (emailErr) {
@@ -945,6 +1046,8 @@ app.get('/api/approve-opportunity', async (req, res) => {
         if (!opportunityId) return res.status(400).send('Opportunity ID is required');
 
         // 1. Update Firestore
+        let oppDocRef = null;
+        let oppData = null;
         const snapshot = await admin.firestore().collection('opportunities')
             .where('ghl.opportunityId', '==', opportunityId)
             .limit(1)
@@ -952,6 +1055,8 @@ app.get('/api/approve-opportunity', async (req, res) => {
 
         if (!snapshot.empty) {
             const doc = snapshot.docs[0];
+            oppDocRef = doc.ref;
+            oppData = doc.data();
             await doc.ref.update({
                 'approval.status': 'approved',
                 'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
@@ -959,9 +1064,35 @@ app.get('/api/approve-opportunity', async (req, res) => {
         }
 
         // 2. Add note to GHL
-        await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`, {
-            body: `**Price override approved by Josh Collins via email.**`
-        }, { headers });
+        const ghlService = await getGHLService(GHL_API_KEY);
+        await ghlService.addOpportunityNote(opportunityId, '**Price override approved by Josh Collins via email.**');
+
+        // 3. Send proposal after approval
+        if (oppData?.proposal?.pdfUrl && oppData?.ghl?.contactId) {
+            const sendData = {
+                contactId: oppData.ghl.contactId,
+                assignedTo: oppData.assignment?.assignedToUser,
+                brokerEmail: oppData.broker?.email,
+                employerName: oppData.employerName,
+                businessName: oppData.employerName,
+                effectiveDate: oppData.details?.effectiveDate
+            };
+
+            const sendResult = await sendProposalEmail(sendData, oppData.proposal.pdfUrl, ghlService);
+            await applyProposalEmailUpdate(oppDocRef, sendResult);
+
+            if (sendResult.ok) {
+                await ghlService.addContactNote(oppData.ghl.contactId,
+                    `Pricing Proposal sent to Broker via automated email after approval. [Link to Proposal](${oppData.proposal.pdfUrl})`
+                );
+            }
+        } else if (oppDocRef) {
+            await oppDocRef.update({
+                'proposal.emailStatus': 'failed',
+                'proposal.lastAttemptAt': admin.firestore.FieldValue.serverTimestamp(),
+                'proposal.lastError': 'missing_pdf_or_contact'
+            });
+        }
 
         res.send(`
             <html>
@@ -1003,9 +1134,8 @@ app.get('/api/reject-opportunity', async (req, res) => {
         }
 
         // 2. Add note to GHL
-        await axios.post(`https://services.leadconnectorhq.com/opportunities/${opportunityId}/notes`, {
-            body: `**Price override rejected by Josh Collins via email.**`
-        }, { headers });
+        const ghlService = await getGHLService(GHL_API_KEY);
+        await ghlService.addOpportunityNote(opportunityId, '**Price override rejected by Josh Collins via email.**');
 
         res.send(`
             <html>

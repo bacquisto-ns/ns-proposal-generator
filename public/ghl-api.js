@@ -5,7 +5,9 @@ const CONFIG = {
     configUrl: '/api/config',
     locationId: 'NFWWwK7qd0rXqtNyOINy',
     pipelineId: 'X3z6soG2N6TEvus4f9of',
-    stageId: '85aa3281-f8ad-4fa4-9ad5-19c33d530080' // RFP From Broker
+    stageId: '85aa3281-f8ad-4fa4-9ad5-19c33d530080', // RFP From Broker
+    STAGE_PROPOSAL_SENT: 'c027c8a1-dafb-4e96-bbf9-c82cfe33890a',
+    STAGE_PENDING_APPROVAL: 'e2a38725-aebf-4348-a7a4-38974eefcc70'
 };
 
 let PRODUCTS = [];
@@ -649,7 +651,7 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         name: opportunityName,
         employerName: business, // Pass business name explicitly for PDF generation
         pipelineId: CONFIG.pipelineId,
-        stageId: CONFIG.stageId,
+        stageId: hasOverride ? CONFIG.STAGE_PENDING_APPROVAL : CONFIG.STAGE_PROPOSAL_SENT,
         status: 'open',
         locationId: CONFIG.locationId,
         source: source, // Standard GHL Source Field

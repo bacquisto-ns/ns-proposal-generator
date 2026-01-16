@@ -1,7 +1,6 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require('firebase-functions/params');
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -10,7 +9,7 @@ const FormData = require('form-data');
 const admin = require('firebase-admin');
 
 // --- Shared Logic ---
-const { sanitizeString, sanitizeEmail, sanitizeNumber, getGHLHeaders } = require('./shared/utils');
+const { sanitizeString, sanitizeEmail, sanitizeNumber } = require('./shared/utils');
 const { GHLService } = require('./shared/ghl-service');
 const productsConfig = require('./shared/products.json');
 
@@ -167,7 +166,6 @@ const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 async function createProposalPDF(data, outputPath) {
     try {
         const templatePath = path.join(__dirname, 'NueSynergy Pricing Proposal_Template 10.25.pdf');
-        // Note: In Firebase Functions, files in the function directory are included in the deployment
         if (!fs.existsSync(templatePath)) {
             console.warn(`Template PDF not found at ${templatePath}. Creating a blank document instead.`);
             const doc = await PDFDocument.create();
@@ -182,7 +180,6 @@ async function createProposalPDF(data, outputPath) {
         const templateDoc = await PDFDocument.load(templateBytes);
         const finalDoc = await PDFDocument.create();
 
-        // 1. Copy first 15 pages
         const pageIndices = Array.from({ length: Math.min(15, templateDoc.getPageCount()) }, (_, i) => i);
         const copiedPages = await finalDoc.copyPages(templateDoc, pageIndices);
         copiedPages.forEach((page) => finalDoc.addPage(page));
@@ -190,10 +187,9 @@ async function createProposalPDF(data, outputPath) {
         const boldFont = await finalDoc.embedFont(StandardFonts.HelveticaBold);
         const regularFont = await finalDoc.embedFont(StandardFonts.Helvetica);
 
-        // Colors
-        const primaryColor = rgb(0 / 255, 51 / 255, 102 / 255); // #003366
-        const secondaryColor = rgb(128 / 255, 176 / 255, 64 / 255); // #80B040
-        const accentColor = rgb(230 / 255, 230 / 255, 230 / 255); // #E6E6E6
+        const primaryColor = rgb(0 / 255, 51 / 255, 102 / 255);
+        const secondaryColor = rgb(128 / 255, 176 / 255, 64 / 255);
+        const accentColor = rgb(230 / 255, 230 / 255, 230 / 255);
         const borderColor = rgb(200 / 255, 200 / 255, 200 / 255);
         const textColor = rgb(51 / 255, 51 / 255, 51 / 255);
 
@@ -252,7 +248,6 @@ async function createProposalPDF(data, outputPath) {
         let page16 = finalDoc.addPage();
         const { width, height } = page16.getSize();
 
-        // Banner
         page16.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: secondaryColor });
         page16.drawRectangle({ x: 0, y: height - 100, width, height: 60, color: primaryColor });
         page16.drawText('PROPOSAL: PLAN OPTIONS', { x: 50, y: height - 75, size: 16, font: boldFont, color: rgb(1, 1, 1) });
@@ -265,7 +260,6 @@ async function createProposalPDF(data, outputPath) {
             effDate = `${parts[1]}-${parts[2]}-${parts[0]}`;
         }
 
-        // Pre-calculate which products are selected for date display logic
         const hasProduct = (type) => (data.products || []).some(p => p.product === type);
         const selection = {
             hsa: hasProduct('HSA'),
@@ -284,7 +278,6 @@ async function createProposalPDF(data, outputPath) {
         page16.drawText(`GROUP: ${groupName}`, { x: 60, y: y - 14, size: 10, font: boldFont, color: textColor });
         y -= 25;
 
-        // HSA
         y = drawSectionHeader(page16, y, 'HSA Plans');
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getDate('hsa'));
         y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', getDate('hsa'), true);
@@ -292,7 +285,6 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HSA'), getDate('hsa'), true);
         y -= 10;
 
-        // FSA
         y = drawSectionHeader(page16, y, 'Section 125, FSA Plans');
         y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getDate('fsa'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getDate('fsa'), true);
@@ -300,7 +292,6 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'Monthly Minimum', findMinFee('FSA'), getDate('fsa'), true);
         y -= 10;
 
-        // HRA
         y = drawSectionHeader(page16, y, 'Section 105, HRA Plans');
         y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getDate('hra'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('hra'), true);
@@ -308,7 +299,6 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HRA'), getDate('hra'), true);
         y -= 10;
 
-        // Miscellaneous
         y = drawSectionHeader(page16, y, 'Miscellaneous Services');
         const miscDate = (selection.hsa || selection.fsa || selection.hra || selection.lsa) ? effDate : '-';
         y = drawRow(page16, y, 'eClaims Manager Per Participant, Monthly', '-', miscDate);
@@ -316,22 +306,18 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'Smart Debit Card Setup & Administration Per Participant, Monthly', '-', miscDate);
         y -= 10;
 
-        // LSA
         y = drawSectionHeader(page16, y, 'LSA Plans');
         y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), getDate('lsa'));
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), getDate('lsa'), true);
         y -= 10;
 
-        // COBRA
         y = drawSectionHeader(page16, y, 'COBRAcare+ Administration');
         y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getDate('cobra'));
         y = drawRow(page16, y, 'Current COBRA Continuation', '-', getDate('cobra'), true);
         y = drawRow(page16, y, 'Qualifying Event Notice', '-', getDate('cobra'), true);
 
-        // Page 16 Footer
         page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
 
-        // --- PAGE 17 ---
         let page17 = finalDoc.addPage();
         page17.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: secondaryColor });
         page17.drawRectangle({ x: 0, y: height - 100, width, height: 60, color: primaryColor });
@@ -339,7 +325,6 @@ async function createProposalPDF(data, outputPath) {
 
         y = height - 120;
 
-        // Direct Bill
         y = drawSectionHeader(page17, y, 'Direct Billing');
         y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), getDate('direct'));
         y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('direct'), true);
@@ -347,13 +332,11 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', findMinFee('Direct'), getDate('direct'), true);
         y -= 10;
 
-        // POP
         y = drawSectionHeader(page17, y, 'Section 125, Premium Only Plan (POP)');
         y = drawRow(page17, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), getDate('pop'));
         y = drawRow(page17, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('pop'), true);
         y -= 10;
 
-        // Files
         y = drawSectionHeader(page17, y, 'File Implementation and Processing');
         const anyProduct = Object.values(selection).some(v => v);
         const fileDate = anyProduct ? effDate : '-';
@@ -375,7 +358,6 @@ async function createProposalPDF(data, outputPath) {
             });
         }
 
-        // Page 17 Footer
         page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
 
         const pdfBytes = await finalDoc.save();
@@ -386,7 +368,6 @@ async function createProposalPDF(data, outputPath) {
         throw err;
     }
 }
-
 
 async function sendApprovalEmail(data, opportunityId, ghlService) {
     try {
@@ -417,55 +398,33 @@ async function sendApprovalEmail(data, opportunityId, ghlService) {
                     </div>
                     <div style="padding: 30px;">
                         <p style="font-size: 16px;">An opportunity has been created that requires your approval due to price overrides.</p>
-
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
-                            <h4 style="margin-top: 0; color: #003366; border-bottom: 2px solid #80B040; display: inline-block; padding-bottom: 5px;">Proposal Details</h4>
+                            <h4 style="margin-top: 0; color: #003366;">Proposal Details</h4>
                             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                <tr><td style="padding: 5px 0; width: 140px;"><strong>Employer:</strong></td><td>${data.contact?.companyName || data.name}</td></tr>
-                                <tr><td style="padding: 5px 0;"><strong>Broker:</strong></td><td>${data.contact?.name || 'N/A'}</td></tr>
-                                <tr><td style="padding: 5px 0;"><strong>Sales Person:</strong></td><td>${data.assignedToName || 'N/A'}</td></tr>
-                                <tr><td style="padding: 5px 0;"><strong>Total Employees:</strong></td><td>${data.customFields.find(f => f.key === 'opportunity.total_employees')?.field_value || 'N/A'}</td></tr>
-                                <tr><td style="padding: 5px 0;"><strong>Effective Date:</strong></td><td>${data.customFields.find(f => f.key === 'opportunity.effective_date')?.field_value || 'N/A'}</td></tr>
-                                <tr><td style="padding: 5px 0;"><strong>Yearly Value:</strong></td><td>$${data.monetaryValue}</td></tr>
+                                <tr><td><strong>Employer:</strong></td><td>${data.employerName || data.name}</td></tr>
+                                <tr><td><strong>Sales Person:</strong></td><td>${data.assignedToName || 'N/A'}</td></tr>
+                                <tr><td><strong>Yearly Value:</strong></td><td>$${data.monetaryValue}</td></tr>
                             </table>
                         </div>
-
-                        <h4 style="color: #003366; margin-bottom: 10px;">Product Overrides</h4>
+                        <h4 style="color: #003366;">Product Overrides</h4>
                         <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; border: 1px solid #eee;">
                             <thead style="background-color: #f1f5f9;">
                                 <tr>
-                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Product</th>
-                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2 solid #ddd;">Employees</th>
-                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Rate</th>
-                                    <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd;">Justification</th>
+                                    <th style="padding: 12px 10px; text-align: left;">Product</th>
+                                    <th style="padding: 12px 10px; text-align: left;">Employees</th>
+                                    <th style="padding: 12px 10px; text-align: left;">Rate</th>
+                                    <th style="padding: 12px 10px; text-align: left;">Justification</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${productRows}
                             </tbody>
                         </table>
-
-                        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
-                            <a href="${baseUrl}/api/approve-opportunity?id=${opportunityId}"
-                               style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 10px; display: inline-block; min-width: 120px;">
-                                APPROVE
-                            </a>
-                            <a href="${baseUrl}/api/reject-opportunity?id=${opportunityId}"
-                               style="background-color: #d32f2f; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 10px; display: inline-block; min-width: 120px;">
-                                REJECT
-                            </a>
+                        <div style="text-align: center;">
+                            <a href="${baseUrl}/api/approve-opportunity?id=${opportunityId}" style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-right: 10px;">APPROVE</a>
+                            <a href="${baseUrl}/api/reject-opportunity?id=${opportunityId}" style="background-color: #d32f2f; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">REJECT</a>
                         </div>
-
-                        <p style="text-align: center; margin-top: 25px;">
-                            <a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list" style="color: #003366; font-size: 13px; text-decoration: underline;">
-                                View Opportunity in GHL Pipeline
-                            </a>
-                        </p>
                     </div>
-                </div>
-                <div style="max-width: 600px; margin: 0 auto; color: #94a3b8; padding: 20px; text-align: center; font-size: 11px;">
-                    © ${new Date().getFullYear()} NueSynergy. All rights reserved. <br>
-                    This is an automated request from the NueSynergy Sales Intake Portal.
                 </div>
             </body>
             </html>
@@ -475,83 +434,94 @@ async function sendApprovalEmail(data, opportunityId, ghlService) {
             type: 'Email',
             contactId: joshCollinsContactId,
             emailFrom: 'sales-intake@nuesynergy.com',
-            subject: `Action Required: Price Override Approval for ${data.contact?.companyName || data.name}`,
-            html: emailBody,
-            message: `Action Required: Price override approval for ${data.name}. Visit the portal to review.`
+            subject: `Action Required: Price Override Approval for ${data.employerName || data.name}`,
+            html: emailBody
         };
 
-        const response = await ghlService.sendMessage(payload);
-
-        console.log('Approval email sent to Josh Collins:', response);
-        return response;
+        return await ghlService.sendMessage(payload);
     } catch (error) {
-        console.error('Error sending approval email:', error.response?.data || error.message);
+        console.error('Error sending approval email:', error.message);
     }
 }
 
-/**
- * Sends a proposal email to the Broker and CCs the Opportunity Owner
- */
-async function sendProposalEmail(data, pdfUrl, ghlService) {
+async function resolveContactEmail(data, ghlService) {
+    const email = data.contactEmail || data.contact?.email || data.brokerEmail || data.broker?.email;
+    if (email) return email;
+    if (!data.contactId) return null;
+
     try {
-        const contactId = data.contactId;
-        const assignedTo = data.assignedTo;
-        const brokerEmail = data.contactEmail || data.contact?.email || data.brokerEmail;
-        const businessName = data.employerName || data.businessName || data.contact?.companyName || 'Group';
+        const contactRes = await ghlService.getContact(data.contactId);
+        const contact = contactRes.contact || contactRes;
+        return contact?.email || null;
+    } catch (error) {
+        console.error('Failed to fetch contact email:', error.message);
+        return null;
+    }
+}
 
-        if (!contactId || !brokerEmail) {
-            console.warn('[sendProposalEmail] Missing contactId or brokerEmail, skipping email.');
-            return;
+async function resolveOwnerEmail(assignedTo, ghlService) {
+    if (!assignedTo) return null;
+    try {
+        const users = await ghlService.getUsers();
+        const userList = users.users || users;
+        const owner = userList.find(u => u.id === assignedTo);
+        return owner ? owner.email : null;
+    } catch (error) {
+        console.error('Failed to fetch owner email:', error.message);
+        return null;
+    }
+}
+
+async function sendProposalEmail(data, pdfUrl, ghlService) {
+    const result = {
+        ok: false,
+        brokerEmail: null,
+        ownerEmail: null,
+        error: null
+    };
+
+    try {
+        const contactId = data.contactId || data.ghl?.contactId;
+        const assignedTo = data.assignedTo || data.assignment?.assignedToUser;
+        const businessName = data.employerName || data.businessName || data.contact?.companyName || data.name || 'Group';
+
+        if (!contactId) {
+            result.error = 'missing_contact_id';
+            return result;
         }
 
-        // 1. Fetch Owner Email
-        let ownerEmail = null;
-        if (assignedTo) {
-            try {
-                const users = await ghlService.getUsers();
-                const userList = users.users || users;
-                const owner = userList.find(u => u.id === assignedTo);
-                if (owner) {
-                    ownerEmail = owner.email;
-                    console.log(`[sendProposalEmail] Found owner email: ${ownerEmail}`);
-                }
-            } catch (userErr) {
-                console.error('[sendProposalEmail] Failed to fetch owner email:', userErr.message);
-            }
+        if (!pdfUrl) {
+            result.error = 'missing_pdf_url';
+            return result;
         }
+
+        const brokerEmail = await resolveContactEmail({ ...data, contactId }, ghlService);
+        result.brokerEmail = brokerEmail;
+        if (!brokerEmail) {
+            result.error = 'missing_broker_email';
+            return result;
+        }
+
+        const ownerEmail = await resolveOwnerEmail(assignedTo, ghlService);
+        result.ownerEmail = ownerEmail;
 
         const emailBody = `
             <!DOCTYPE html>
             <html>
-            <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+            <body style="font-family: sans-serif;">
                 <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <div style="background-color: #003366; color: white; padding: 25px; text-align: center;">
                         <img src="https://nuesynergy.com/wp-content/uploads/2023/02/nuesynergy_logo.png" alt="NueSynergy" style="max-width: 180px; width: 100%; height: auto; display: block; margin: 0 auto 12px;">
                         <h2 style="margin: 0; font-weight: 300; letter-spacing: 1px;">PRICING PROPOSAL</h2>
                     </div>
                     <div style="padding: 30px;">
-                        <p style="font-size: 16px;">Hello,</p>
-                        <p style="font-size: 16px;">Please find the pricing proposal for <strong>${businessName}</strong> attached or via the link below:</p>
-                        
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="${pdfUrl}" 
-                               style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                                VIEW PROPOSAL PDF
-                            </a>
-                        </div>
-
-                        <p style="font-size: 14px; color: #666;">If you have any questions regarding this proposal, please reach out to your NueSynergy representative.</p>
-                        
-                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                            <p style="font-size: 14px;"><strong>Proposal Details:</strong><br>
-                            Effective Date: ${data.effectiveDate || 'N/A'}<br>
-                            Group: ${businessName}</p>
-                        </div>
+                    <p>Hello,</p>
+                    <p>Please find the pricing proposal for <strong>${businessName}</strong> attached or via the link below:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${pdfUrl}" style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">VIEW PROPOSAL PDF</a>
                     </div>
-                </div>
-                <div style="max-width: 600px; margin: 0 auto; color: #94a3b8; padding: 20px; text-align: center; font-size: 11px;">
-                    © ${new Date().getFullYear()} NueSynergy. All rights reserved. <br>
-                    This is an automated delivery from the NueSynergy Sales Intake Portal.
+                    <p style="font-size: 14px; color: #666;">If you have any questions, please reach out to your NueSynergy representative.</p>
+                    </div>
                 </div>
             </body>
             </html>
@@ -562,38 +532,50 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
             contactId: contactId,
             emailFrom: 'sales-intake@nuesynergy.com',
             subject: `Pricing Proposal: ${businessName}`,
-            html: emailBody,
-            message: `Please find the pricing proposal for ${businessName} here: ${pdfUrl}`
+            html: emailBody
         };
 
-        // Add CC if owner found
         if (ownerEmail) {
             payload.cc = [ownerEmail];
         }
 
         const response = await ghlService.sendMessage(payload);
-        console.log('[sendProposalEmail] Proposal email sent successfully:', response);
-        return response;
+        result.ok = true;
+        return result;
     } catch (error) {
-        console.error('[sendProposalEmail] Error sending proposal email:', error.response?.data || error.message);
+        console.error('Error sending proposal email:', error.message);
+        result.error = error.message;
+        return result;
     }
 }
 
-// Routes
+async function applyProposalEmailUpdate(docRef, result) {
+    if (!docRef || !result) return;
+
+    const update = {
+        'proposal.lastAttemptAt': admin.firestore.FieldValue.serverTimestamp(),
+        'proposal.attemptCount': admin.firestore.FieldValue.increment(1),
+        'proposal.brokerEmail': result.brokerEmail || null,
+        'proposal.ownerEmail': result.ownerEmail || null,
+        'proposal.lastError': result.ok ? null : (result.error || 'send_failed'),
+        'proposal.emailStatus': result.ok ? 'sent' : 'failed'
+    };
+
+    if (result.ok) {
+        update['proposal.sentAt'] = admin.firestore.FieldValue.serverTimestamp();
+    }
+
+    await docRef.update(update);
+}
+
 app.get('/api/users', async (req, res) => {
     try {
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
-        console.log(`[Users API] Requesting users for location: ${GHL_LOCATION_ID}`);
-
         const response = await ghlService.getUsers();
-
-        const users = response.users || response;
-        console.log(`[Users API] Successfully fetched ${Array.isArray(users) ? users.length : 0} users.`);
-        res.json(users);
+        res.json(response.users || response);
     } catch (error) {
-        console.error('[Users API] Error fetching users:', error.message);
-        res.status(500).json({ error: 'Failed to fetch users' });
+        res.status(500).json({ error: 'Failed' });
     }
 });
 
@@ -601,89 +583,55 @@ app.get('/api/contacts', async (req, res) => {
     try {
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
-        const query = req.query.query || '';
-        const response = await ghlService.searchContacts(query, { limit: 50 });
-        const contacts = response.contacts || [];
-        res.json(contacts);
+        const response = await ghlService.searchContacts(req.query.query || '');
+        res.json(response.contacts || []);
     } catch (error) {
-        console.error('[Contacts API] Error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch contacts' });
+        res.status(500).json({ error: 'Failed' });
     }
 });
 
 app.get('/api/opportunities', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
-        const snapshot = await admin.firestore().collection('opportunities')
-            .orderBy('createdAt', 'desc')
-            .limit(limit)
-            .get();
-
+        const snapshot = await admin.firestore().collection('opportunities').orderBy('createdAt', 'desc').limit(limit).get();
         const opportunities = [];
-        snapshot.forEach(doc => {
-            opportunities.push({ id: doc.id, ...doc.data() });
-        });
+        snapshot.forEach(doc => opportunities.push({ id: doc.id, ...doc.data() }));
         res.json(opportunities);
     } catch (error) {
-        console.error('[Opportunities API] Error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch opportunities' });
+        res.status(500).json({ error: 'Failed' });
     }
 });
 
 app.post('/api/create-opportunity', async (req, res) => {
-    const validationErrors = validateOpportunityInput(req.body);
-    if (validationErrors.length > 0) {
-        return res.status(400).json({ error: 'Validation failed', details: validationErrors });
-    }
-
-    const data = sanitizeOpportunityData(req.body);
-    const actor = {
-        name: data.contact?.name || 'Unknown Broker',
-        email: data.contact?.email || 'N/A',
-        role: 'Broker'
-    };
-
     try {
+        const data = sanitizeOpportunityData(req.body);
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
 
-        // 1. Upsert Contact
         let contactId = data.contactId;
         if (!contactId && data.contact) {
-            const upsertPayload = {
-                firstName: data.contact.firstName || data.contact.name.split(' ')[0],
-                lastName: data.contact.lastName || data.contact.name.split(' ').slice(1).join(' '),
-                email: data.contact.email,
-                companyName: data.contact.companyName
-            };
-            const upsertRes = await ghlService.upsertContact(upsertPayload);
+            const upsertRes = await ghlService.upsertContact(data.contact);
             contactId = upsertRes.contact.id;
-            if (upsertRes.new) {
-                await logAudit('CREATE', 'Contact', contactId, { name: data.contact.name }, req, 'SUCCESS', actor);
-            }
         }
 
-        if (!contactId) throw new Error('contactId is required');
-
-        // 2. Create Opportunity
         const opportunityPayload = {
             name: data.name,
             pipelineId: data.pipelineId,
             pipelineStageId: data.stageId,
-            status: data.status || 'open',
+            status: 'open',
             contactId: contactId,
             assignedTo: data.assignedTo,
             monetaryValue: data.monetaryValue,
-            source: data.source,
             customFields: data.customFields
         };
 
         const oppRes = await ghlService.createOpportunity(opportunityPayload);
         const opportunity = oppRes.opportunity || oppRes;
 
-        await logAudit('CREATE', 'Opportunity', opportunity.id, { name: data.name }, req, 'SUCCESS', actor);
+        const approvalField = data.customFields.find(f => f.id === 'wJbGGl9zanGxn392jFw5' || f.key === 'opportunity.requires_approval');
+        const requiresApproval = approvalField?.field_value === 'Yes';
 
-        // 3. Save to Firestore
+        let firestoreDocRef = null;
         const firestoreData = {
             employerName: data.employerName || data.contact?.companyName || data.name,
             status: 'new',
@@ -694,23 +642,39 @@ app.post('/api/create-opportunity', async (req, res) => {
                 agency: data.brokerAgency || ''
             },
             details: {
-                effectiveDate: data.customFields.find(f => f.key === 'opportunity.rfp_effective_date')?.field_value,
-                proposalDate: data.customFields.find(f => f.key === 'opportunity.proposal_date')?.field_value,
-                totalEmployees: parseInt(data.customFields.find(f => f.key === 'opportunity.total_employees')?.field_value || '0'),
-                source: data.source,
+                effectiveDate: data.customFields.find(f => f.id === 'TCajUYyGFfxNawfFVHzH' || f.key === 'opportunity.rfp_effective_date')?.field_value,
+                proposalDate: data.customFields.find(f => f.id === 'qDAjtgB8BnOe44mmBxZJ' || f.key === 'opportunity.proposal_date')?.field_value,
+                totalEmployees: parseInt(data.customFields.find(f => f.id === '1Ns6AFE7tqfjLrSMmlGm' || f.key === 'opportunity.total_employees')?.field_value || '0'),
+                source: data.source || data.customFields.find(f => f.id === '4Ft4xkId76QFmogGxQLT' || f.key === 'opportunity.opportunity_source' || f.key === 'opportunity.source')?.field_value,
+                currentAdministrator: data.customFields.find(f => f.id === 'gG9uknunlZBamXsF5Ynu' || f.key === 'opportunity.current_administrator')?.field_value,
+                benAdminSystem: data.customFields.find(f => f.id === 'FbHjdv6IH9saWvWxD9qk' || f.key === 'opportunity.ben_admin_system')?.field_value,
+                postalCode: data.customFields.find(f => f.id === 'RjgwrcO6mdOKu80HsZA2' || f.key === 'opportunity.postal_code')?.field_value || '',
                 proposalMessage: data.proposalMessage || ''
             },
-            assignment: { assignedToUser: data.assignedTo },
+            assignment: {
+                assignedToUser: data.assignedTo
+            },
             products: data.products,
             financials: {
-                monthlyTotal: parseFloat(data.customFields.find(f => f.key === 'opportunity.monthly_total')?.field_value || '0'),
-                yearlyTotal: parseFloat(data.customFields.find(f => f.key === 'opportunity.yearly_total')?.field_value || '0')
+                monthlyTotal: parseFloat(data.customFields.find(f => f.id === '7R4mvELrwlpcNtwFbeN1' || f.key === 'opportunity.monthly_total')?.field_value || '0'),
+                yearlyTotal: parseFloat(data.customFields.find(f => f.id === 'h4RmeiogDVZGhb0DEaia' || f.key === 'opportunity.yearly_total')?.field_value || '0')
             },
             approval: {
-                requiresApproval: data.customFields.find(f => f.key === 'opportunity.requires_approval')?.field_value === 'Yes'
+                requiresApproval: requiresApproval,
+                approverName: data.customFields.find(f => f.id === 'k29uFeF1SbZ5tIPSn7ro' || f.key === 'opportunity.approver_name')?.field_value,
+                status: requiresApproval ? 'pending' : 'not_required'
+            },
+            proposal: {
+                pdfUrl: null,
+                generatedAt: null,
+                emailStatus: requiresApproval ? 'awaiting_approval' : 'pending',
+                sentAt: null,
+                lastAttemptAt: null,
+                lastError: null,
+                attemptCount: 0
             },
             ghl: {
-                locationId: GHL_LOCATION_ID,
+                locationId: data.locationId,
                 contactId: contactId,
                 opportunityId: opportunity.id,
                 pipelineId: data.pipelineId,
@@ -718,31 +682,56 @@ app.post('/api/create-opportunity', async (req, res) => {
             }
         };
 
-        await admin.firestore().collection('opportunities').add(firestoreData);
+        firestoreDocRef = await admin.firestore().collection('opportunities').add(firestoreData);
 
-        // 4. Send Approval Email if needed
-        if (firestoreData.approval.requiresApproval) {
-            await sendApprovalEmail(data, opportunity.id, ghlService);
+        // Automation
+        try {
+            const fileName = `Proposal_${Date.now()}.pdf`;
+            const filePath = path.join(os.tmpdir(), fileName);
+            await createProposalPDF(data, filePath);
+
+            const form = new FormData();
+            form.append('file', fs.createReadStream(filePath), { filename: fileName });
+            const uploadRes = await ghlService.uploadFile(form);
+            const pdfUrl = uploadRes.url || uploadRes.data?.url;
+
+            if (firestoreDocRef && pdfUrl) {
+                await firestoreDocRef.update({
+                    'proposal.pdfUrl': pdfUrl,
+                    'proposal.generatedAt': admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            if (requiresApproval) {
+                await sendApprovalEmail(data, opportunity.id, ghlService);
+            } else if (pdfUrl) {
+                const sendResult = await sendProposalEmail({ ...data, contactId }, pdfUrl, ghlService);
+                await applyProposalEmailUpdate(firestoreDocRef, sendResult);
+
+                if (sendResult.ok && contactId) {
+                    await ghlService.addContactNote(contactId,
+                        `Pricing Proposal sent to Broker via automated email. [Link to Proposal](${pdfUrl})`
+                    );
+                }
+            }
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        } catch (e) {
+            console.error('PDF Flow failed', e);
         }
 
         res.json(opportunity);
     } catch (error) {
-        console.error('[Create Opportunity API] Error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
 app.post('/api/generate-pdf', async (req, res) => {
     try {
-        console.log('Generating On-Demand PDF & Sending Email (Prod)...');
         const data = req.body;
-        const fileName = `Proposal_${data.employerName || data.businessName || 'Group'}_${Date.now()}.pdf`;
+        const fileName = `Manual_${Date.now()}.pdf`;
         const filePath = path.join(os.tmpdir(), fileName);
-
-        // 1. Generate PDF
         await createProposalPDF(data, filePath);
 
-        // 2. Upload to GHL & Send Email (if metadata present)
         if (data.contactId) {
             try {
                 const apiKey = ghlApiKey.value();
@@ -756,145 +745,102 @@ app.post('/api/generate-pdf', async (req, res) => {
                 });
 
                 const uploadRes = await ghlService.uploadFile(form);
-                const pdfUrl = uploadRes.url;
+                const pdfUrl = uploadRes.url || uploadRes.data?.url;
 
-                console.log(`[PDF API] Uploaded to GHL: ${pdfUrl}`);
-
-                // Send Email to Broker/Contact and CC Owner
-                await sendProposalEmail(data, pdfUrl, ghlService);
-
-                // Add Note to Contact
-                await ghlService.addContactNote(data.contactId,
-                    `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
-                );
-
-                await logAudit('SEND_PROPOSAL', 'Contact', data.contactId, {
-                    employer: data.employerName || data.businessName,
-                    pdfUrl: pdfUrl
-                }, req);
-
+                const sendResult = await sendProposalEmail(data, pdfUrl, ghlService);
+                if (sendResult.ok) {
+                    await ghlService.addContactNote(data.contactId,
+                        `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
+                    );
+                }
             } catch (emailErr) {
-                console.error('[PDF API] Email/Upload failed:', emailErr.message);
+                console.error('Email/Upload failed:', emailErr.message);
             }
         }
 
-        res.download(filePath, fileName);
-    } catch (error) {
-        console.error('PDF Generation Error:', error);
-        res.status(500).json({ error: 'Failed to generate PDF' });
+        res.download(filePath);
+    } catch (e) {
+        res.status(500).send('Error');
     }
 });
 
 app.get('/api/approve-opportunity', async (req, res) => {
     try {
-        const opportunityId = req.query.id;
-        if (!opportunityId) return res.status(400).send('Opportunity ID is required');
-
+        const id = req.query.id;
+        if (!id) return res.status(400).send('Opportunity ID is required');
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
 
+        let oppDocRef = null;
+        let oppData = null;
         const snapshot = await admin.firestore().collection('opportunities')
-            .where('ghl.opportunityId', '==', opportunityId)
+            .where('ghl.opportunityId', '==', id)
             .limit(1)
             .get();
 
         if (!snapshot.empty) {
-            await snapshot.docs[0].ref.update({
+            const doc = snapshot.docs[0];
+            oppDocRef = doc.ref;
+            oppData = doc.data();
+            await doc.ref.update({
                 'approval.status': 'approved',
                 'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
             });
         }
 
-        await ghlService.addOpportunityNote(opportunityId, `**Price override approved by Josh Collins via email.**`);
+        await ghlService.addOpportunityNote(id, 'Approved via email');
 
-        res.send(`
-            <html>
-                <body style="font-family: sans-serif; text-align: center; padding: 50px; background-color: #f8fafc;">
-                    <div style="background: white; max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <div style="color: #80B040; font-size: 64px; margin-bottom: 20px;">✓</div>
-                        <h2 style="color: #003366; margin-bottom: 15px;">Opportunity Approved</h2>
-                        <p style="color: #64748b; line-height: 1.6;">The price override for this opportunity has been successfully approved. A note has been added to the opportunity in GHL.</p>
-                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                             <p style="font-size: 13px; color: #94a3b8;">You can now close this window.</p>
-                        </div>
-                    </div>
-                </body>
-            </html>
-        `);
-    } catch (error) {
-        console.error('Approval Error:', error.message);
-        res.status(500).send('Error processing approval');
+        if (oppData?.proposal?.pdfUrl && oppData?.ghl?.contactId) {
+            const sendData = {
+                contactId: oppData.ghl.contactId,
+                assignedTo: oppData.assignment?.assignedToUser,
+                brokerEmail: oppData.broker?.email,
+                employerName: oppData.employerName,
+                businessName: oppData.employerName,
+                effectiveDate: oppData.details?.effectiveDate
+            };
+            const sendResult = await sendProposalEmail(sendData, oppData.proposal.pdfUrl, ghlService);
+            await applyProposalEmailUpdate(oppDocRef, sendResult);
+
+            if (sendResult.ok) {
+                await ghlService.addContactNote(oppData.ghl.contactId,
+                    `Pricing Proposal sent to Broker via automated email after approval. [Link to Proposal](${oppData.proposal.pdfUrl})`
+                );
+            }
+        } else if (oppDocRef) {
+            await oppDocRef.update({
+                'proposal.emailStatus': 'failed',
+                'proposal.lastAttemptAt': admin.firestore.FieldValue.serverTimestamp(),
+                'proposal.lastError': 'missing_pdf_or_contact'
+            });
+        }
+
+        res.send('Approved');
+    } catch (e) {
+        res.status(500).send('Error');
     }
 });
 
 app.get('/api/reject-opportunity', async (req, res) => {
     try {
-        const opportunityId = req.query.id;
-        if (!opportunityId) return res.status(400).send('Opportunity ID is required');
-
+        const id = req.query.id;
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
-
-        const snapshot = await admin.firestore().collection('opportunities')
-            .where('ghl.opportunityId', '==', opportunityId)
-            .limit(1)
-            .get();
-
-        if (!snapshot.empty) {
-            await snapshot.docs[0].ref.update({
-                'approval.status': 'rejected',
-                'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
-            });
-        }
-
-        await ghlService.addOpportunityNote(opportunityId, `**Price override rejected by Josh Collins via email.**`);
-
-        res.send(`
-            <html>
-                <body style="font-family: sans-serif; text-align: center; padding: 50px; background-color: #f8fafc;">
-                    <div style="background: white; max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <div style="color: #d32f2f; font-size: 64px; margin-bottom: 20px;">✕</div>
-                        <h2 style="color: #630000; margin-bottom: 15px;">Opportunity Rejected</h2>
-                        <p style="color: #64748b; line-height: 1.6;">The price override for this opportunity has been rejected. A note has been added to the opportunity in GHL.</p>
-                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                             <p style="font-size: 13px; color: #94a3b8;">You can now close this window.</p>
-                        </div>
-                    </div>
-                </body>
-            </html>
-        `);
-    } catch (error) {
-        console.error('Rejection Error:', error.message);
-        res.status(500).send('Error processing rejection');
+        await ghlService.addOpportunityNote(id, 'Rejected via email');
+        res.send('Rejected');
+    } catch (e) {
+        res.status(500).send('Error');
     }
 });
 
 app.get('/api/audit-logs', async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit) || 50;
-        const { action, status, resourceId, startAfter } = req.query;
-
-        let query = admin.firestore().collection('audit_logs');
-        if (action) query = query.where('action', '==', action);
-        if (status) query = query.where('status', '==', status);
-        if (resourceId) query = query.where('resourceId', '==', resourceId);
-
-        query = query.orderBy('timestamp', 'desc').limit(limit);
-
-        if (startAfter) {
-            const seconds = parseInt(startAfter);
-            if (!isNaN(seconds)) {
-                query = query.startAfter(new admin.firestore.Timestamp(seconds, 0));
-            }
-        }
-
-        const snapshot = await query.get();
+        const snapshot = await admin.firestore().collection('audit_logs').orderBy('timestamp', 'desc').limit(50).get();
         const logs = [];
         snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
         res.json(logs);
-    } catch (error) {
-        console.error('[Audit Logs API] Error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch audit logs' });
+    } catch (e) {
+        res.status(500).send('Error');
     }
 });
 
