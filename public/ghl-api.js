@@ -729,8 +729,8 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
             document.getElementById('downloadProposal').addEventListener('click', () => {
                 generateProposalPDF({
                     ...data,
-                    contactId: result.contactId || result.id, // Support different response formats
-                    assignedTo: result.assignedTo,
+                    contactId: result.opportunity?.contactId || result.contactId || result.id, // Support different response formats
+                    assignedTo: result.opportunity?.assignedTo || result.assignedTo,
                     businessName: data.employerName,
                     effectiveDate: formattedEffectiveDate,
                     proposalDate: formattedProposalDate,

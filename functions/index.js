@@ -364,7 +364,7 @@ async function createProposalPDF(data, outputPath) {
         const customMessage = String(data.proposalMessage || '').trim();
         if (customMessage) {
             const lineHeight = 12;
-            y -= 18;
+            y -= 28;
             page17.drawText('Custom Message', { x: 50, y, size: 10, font: boldFont, color: textColor });
             y -= 14;
             const lines = wrapText(customMessage, 500, 9, regularFont);
@@ -412,6 +412,7 @@ async function sendApprovalEmail(data, opportunityId, ghlService) {
             <body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
                 <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <div style="background-color: #003366; color: white; padding: 25px; text-align: center;">
+                        <img src="https://nuesynergy.com/wp-content/uploads/2023/02/nuesynergy_logo.png" alt="NueSynergy" style="max-width: 180px; width: 100%; height: auto; display: block; margin: 0 auto 12px;">
                         <h2 style="margin: 0; font-weight: 300; letter-spacing: 1px;">APPROVAL REQUIRED</h2>
                     </div>
                     <div style="padding: 30px;">

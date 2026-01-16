@@ -860,6 +860,27 @@ tfoot td {
     overflow: hidden;
 }
 
+.admin-page #oppGrid,
+.admin-page .gridjs-wrapper,
+.admin-page .table-container {
+    overflow-x: hidden;
+}
+
+.admin-page .gridjs-table,
+.admin-page #auditTable {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.admin-page .gridjs-th,
+.admin-page .gridjs-td,
+.admin-page #auditTable th,
+.admin-page #auditTable td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .container.full-width {
     max-width: 100%;
     width: 100%;
@@ -867,10 +888,11 @@ tfoot td {
     height: 100%;
     display: flex;
     flex-direction: column;
+    align-items: center;
 }
 
 .admin-content {
-    max-width: 1200px;
+    max-width: 1488px;
     width: 100%;
     margin: 0 auto;
     padding: 0 32px 24px;

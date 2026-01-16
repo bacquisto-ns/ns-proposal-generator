@@ -180,8 +180,8 @@ function initOpportunityGrid(data) {
                     effectiveDate: opp.details?.effectiveDate,
                     proposalDate: opp.details?.proposalDate || new Date().toISOString().split('T')[0],
                     opportunityName: opp.name,
-                    contactId: opp.broker?.id || opp.contactId, // Try multiple fields
-                    assignedTo: opp.assignedTo,
+                    contactId: opp.ghl?.contactId || opp.broker?.id || opp.contactId, // Use synced GHL ID first
+                    assignedTo: opp.assignment?.assignedToUser || opp.assignedTo,
                     products: opp.products || [],
                     proposalMessage: opp.proposalMessage || '',
                     brokerName: opp.broker?.name,
