@@ -16,6 +16,8 @@ const productsConfig = require('./shared/products.json');
 // --- GHL Service Instance (lazy initialization) ---
 let ghlServiceInstance = null;
 const GHL_LOCATION_ID = 'NFWWwK7qd0rXqtNyOINy';
+const STAGE_PROPOSAL_SENT = 'c027c8a1-dafb-4e96-bbf9-c82cfe33890a';
+const STAGE_PENDING_APPROVAL = 'e2a38725-aebf-4348-a7a4-38974eefcc70';
 
 async function getGHLService(apiKey) {
     if (!ghlServiceInstance || ghlServiceInstance.apiKey !== apiKey) {
@@ -809,7 +811,13 @@ app.get('/api/approve-opportunity', async (req, res) => {
             });
         }
 
-        await ghlService.addOpportunityNote(id, 'Approved via email');
+        // Update opportunity stage in GHL to "Proposal Sent"
+        console.log(`[Approval API] Moving opportunity ${id} to stage ${STAGE_PROPOSAL_SENT}`);
+        await ghlService.updateOpportunity(id, {
+            stageId: STAGE_PROPOSAL_SENT
+        });
+
+        await ghlService.addOpportunityNote(id, '**Price override approved by Josh Collins via email. Opportunity moved to Proposal Sent stage.**');
 
         if (oppData?.proposal?.pdfUrl && oppData?.ghl?.contactId) {
             const sendData = {
@@ -848,7 +856,52 @@ app.get('/api/reject-opportunity', async (req, res) => {
         const id = req.query.id;
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
-        await ghlService.addOpportunityNote(id, 'Rejected via email');
+        await ghlService.addOpportunityNote(id, '**Price override rejected by Josh Collins via email.**');
+
+        // 3. Notify Opportunity Owner
+        const snapshot = await admin.firestore().collection('opportunities')
+            .where('ghl.opportunityId', '==', id)
+            .limit(1)
+            .get();
+
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            const oppData = doc.data();
+            const assignedTo = oppData?.assignment?.assignedToUser;
+            const ownerEmail = await resolveOwnerEmail(assignedTo, ghlService);
+
+            if (ownerEmail) {
+                const businessName = oppData?.employerName || 'Group';
+                const joshCollinsContactId = '357NYkROmrFIMPiAdpUc';
+
+                console.log(`[Rejection API] Sending notification to owner ${ownerEmail}`);
+                await ghlService.sendMessage({
+                    type: 'Email',
+                    contactId: joshCollinsContactId, // Send to Josh but CC the owner
+                    emailFrom: 'sales-intake@nuesynergy.com',
+                    subject: `Proposal REJECTED: ${businessName}`,
+                    cc: [ownerEmail],
+                    html: `
+                        <div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                            <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
+                                <h2 style="margin: 0;">Proposal Rejected</h2>
+                            </div>
+                            <div style="padding: 30px;">
+                                <p>The price override for <strong>${businessName}</strong> has been rejected by Josh Collins.</p>
+                                <p><strong>Note:</strong> No proposal email was sent to the broker. If changes are needed, please update the opportunity in GHL and resubmit if necessary.</p>
+                                <p><a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list">View Opportunity in GHL</a></p>
+                            </div>
+                        </div>
+                    `
+                });
+            }
+
+            await doc.ref.update({
+                'approval.status': 'rejected',
+                'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
         res.send('Rejected');
     } catch (e) {
         res.status(500).send('Error');
