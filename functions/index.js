@@ -472,6 +472,15 @@ async function resolveOwnerEmail(assignedTo, ghlService) {
     }
 }
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 async function sendProposalEmail(data, pdfUrl, ghlService) {
     const result = {
         ok: false,
@@ -505,6 +514,17 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
         const ownerEmail = await resolveOwnerEmail(assignedTo, ghlService);
         result.ownerEmail = ownerEmail;
 
+        const proposalMessageRaw = data.proposalMessage || data.details?.proposalMessage || '';
+        const proposalMessage = escapeHtml(proposalMessageRaw).trim().replace(/\n/g, '<br>');
+        const proposalMessageBlock = proposalMessage
+            ? `
+                        <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <p style="margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: #64748b;"><strong>Proposal Message</strong></p>
+                            <p style="margin: 0; font-size: 14px; color: #334155;">${proposalMessage}</p>
+                        </div>
+            `
+            : '';
+
         const emailBody = `
             <!DOCTYPE html>
             <html>
@@ -521,6 +541,7 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
                         <a href="${pdfUrl}" style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">VIEW PROPOSAL PDF</a>
                     </div>
                     <p style="font-size: 14px; color: #666;">If you have any questions, please reach out to your NueSynergy representative.</p>
+                    ${proposalMessageBlock}
                     </div>
                 </div>
             </body>
@@ -797,7 +818,8 @@ app.get('/api/approve-opportunity', async (req, res) => {
                 brokerEmail: oppData.broker?.email,
                 employerName: oppData.employerName,
                 businessName: oppData.employerName,
-                effectiveDate: oppData.details?.effectiveDate
+                effectiveDate: oppData.details?.effectiveDate,
+                proposalMessage: oppData.details?.proposalMessage
             };
             const sendResult = await sendProposalEmail(sendData, oppData.proposal.pdfUrl, ghlService);
             await applyProposalEmailUpdate(oppDocRef, sendResult);
