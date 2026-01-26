@@ -64,5 +64,6 @@ const emailBody = loadTemplate('approval-email', {
     currentYear: new Date().getFullYear()
 });
 
-require('fs').writeFileSync('email_preview.html', emailBody);
-console.log('Email preview generated: email_preview.html');
+const previewPath = path.join(__dirname, 'shared', 'email-templates', 'previews', 'approval-email-preview.html');
+require('fs').writeFileSync(previewPath, emailBody);
+console.log(`Email preview generated: ${previewPath}`);
