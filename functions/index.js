@@ -757,29 +757,7 @@ app.post('/api/generate-pdf', async (req, res) => {
         await createProposalPDF(data, filePath);
 
         if (data.contactId) {
-            try {
-                const apiKey = ghlApiKey.value();
-                const ghlService = await getGHLService(apiKey);
-                const stats = fs.statSync(filePath);
-                const form = new FormData();
-                form.append('file', fs.createReadStream(filePath), {
-                    filename: fileName,
-                    contentType: 'application/pdf',
-                    knownLength: stats.size
-                });
-
-                const uploadRes = await ghlService.uploadFile(form);
-                const pdfUrl = uploadRes.url || uploadRes.data?.url;
-
-                const sendResult = await sendProposalEmail(data, pdfUrl, ghlService);
-                if (sendResult.ok) {
-                    await ghlService.addContactNote(data.contactId,
-                        `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
-                    );
-                }
-            } catch (emailErr) {
-                console.error('Email/Upload failed:', emailErr.message);
-            }
+            console.log(`[PDF API] On-demand PDF generated for contact: ${data.contactId}`);
         }
 
         res.download(filePath);

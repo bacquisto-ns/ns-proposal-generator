@@ -1015,43 +1015,10 @@ app.post('/api/generate-pdf', async (req, res) => {
         // 1. Generate PDF
         await createProposalPDF(data, outputPath);
 
-        // 2. Upload to GHL & Send Email (if metadata present)
+        // 2. Metadata presence (optional: could be used for logging or future enhancements, 
+        // but we no longer send emails automatically from this endpoint to avoid duplicates)
         if (data.contactId) {
-            try {
-                const ghlService = await getGHLService(GHL_API_KEY);
-                const stats = fs.statSync(outputPath);
-                const form = new FormData();
-                form.append('file', fs.createReadStream(outputPath), {
-                    filename: fileName,
-                    contentType: 'application/pdf',
-                    knownLength: stats.size
-                });
-
-                const uploadRes = await ghlService.uploadFile(form);
-                const pdfUrl = uploadRes.url || uploadRes.data?.url;
-
-                console.log(`[PDF API] Uploaded to GHL: ${pdfUrl}`);
-
-                // Send Email to Broker/Contact and CC Owner
-                const sendResult = await sendProposalEmail(data, pdfUrl, ghlService);
-
-                // Add Note to Contact
-                if (sendResult.ok) {
-                    await ghlService.addContactNote(data.contactId,
-                        `Pricing Proposal sent to Broker via email. [Link to Proposal](${pdfUrl})`
-                    );
-                }
-
-                await logAudit('SEND_PROPOSAL', 'Contact', data.contactId, {
-                    employer: data.employerName || data.businessName,
-                    pdfUrl: pdfUrl,
-                    status: sendResult.ok ? 'sent' : 'failed',
-                    error: sendResult.error || null
-                }, req);
-
-            } catch (emailErr) {
-                console.error('[PDF API] Email/Upload failed:', emailErr.message);
-            }
+            console.log(`[PDF API] On-demand PDF generated for contact: ${data.contactId}`);
         }
 
         // 3. Trigger Download
