@@ -64,6 +64,13 @@ function formatDateDisplay(dateStr) {
     return `${parts[1]}/${parts[2]}/${parts[0]}`;
 }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[1]}-${parts[2]}-${parts[0]}`;
+}
+
 function updateSummary() {
     if (!summaryEls.monthly) return;
 
@@ -613,14 +620,6 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
-
-    // Helper to format YYYY-MM-DD to MM-DD-YYYY
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        const parts = dateStr.split('-');
-        if (parts.length !== 3) return dateStr;
-        return `${parts[1]}-${parts[2]}-${parts[0]}`;
-    };
 
     const formattedEffectiveDate = formatDate(data.effectiveDate);
     const formattedProposalDate = formatDate(data.proposalDate) || formatDate(new Date().toISOString().split('T')[0]);
