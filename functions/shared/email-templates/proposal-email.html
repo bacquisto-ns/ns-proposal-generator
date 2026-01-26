@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<body
+    style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+    <div
+        style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div
+            style="background-color: #ffffff; color: #003366; padding: 25px; text-align: center; border-bottom: 2px solid #003366;">
+            <img src="https://nuesynergy.com/wp-content/uploads/2023/02/nuesynergy_logo.png" alt="NueSynergy"
+                style="max-width: 180px; width: 100%; height: auto; display: block; margin: 0 auto 12px;">
+            <h2 style="margin: 0; font-weight: bold; letter-spacing: 1px; color: #003366;">PRICING PROPOSAL</h2>
+        </div>
+        <div style="padding: 30px;">
+            <p style="font-size: 16px;">Hello,</p>
+            <p style="font-size: 16px;">Please find the pricing proposal for <strong>{{businessName}}</strong> attached
+                or via the link below:</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{pdfUrl}}"
+                    style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                    VIEW PROPOSAL PDF
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #666;">If you have any questions regarding this proposal, please reach out
+                to your NueSynergy representative.</p>
+            {{proposalMessageBlock}}
+
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                <p style="font-size: 14px;"><strong>Proposal Details:</strong><br>
+                    Effective Date: {{effectiveDate}}<br>
+                    Group: {{businessName}}</p>
+            </div>
+        </div>
+    </div>
+    <div style="max-width: 600px; margin: 0 auto; color: #94a3b8; padding: 20px; text-align: center; font-size: 11px;">
+        © {{currentYear}} NueSynergy. All rights reserved. <br>
+        This is an automated delivery from the NueSynergy Sales Intake Portal.
+    </div>
+</body>
+
+</html>

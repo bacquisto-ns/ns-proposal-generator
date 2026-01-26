@@ -28,6 +28,7 @@
                 <button class="btn tab-btn active" data-tab="dashboard">Dashboard</button>
                 <button class="btn tab-btn" data-tab="opportunities">Opportunities</button>
                 <button class="btn tab-btn" data-tab="auditLogs">Audit Log</button>
+                <button class="btn tab-btn" data-tab="templates">Email Templates</button>
             </div>
 
             <!-- Dashboard View (Charts) -->
@@ -105,6 +106,34 @@
                     <button id="prevPageBtn" class="btn secondary-btn" style="width: auto;" disabled>Previous</button>
                     <span id="pageInfo">Page 1</span>
                     <button id="nextPageBtn" class="btn secondary-btn" style="width: auto;">Next</button>
+                </div>
+            </div>
+
+            <!-- Email Templates View -->
+            <div id="templatesView" class="view-section"
+                style="display: none; flex: 1; flex-direction: column; gap: 20px;">
+                <div class="shadow-container"
+                    style="padding: 20px; background: white; border-radius: 8px; flex: 1; display: flex; flex-direction: column;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label for="templateSelector" style="margin-bottom: 0;">Select Template:</label>
+                            <select id="templateSelector" style="width: 250px;">
+                                <option value="" disabled selected>Select a template...</option>
+                            </select>
+                        </div>
+                        <button id="saveTemplateBtn" class="btn" style="width: auto; margin: 0; padding: 10px 30px;"
+                            disabled>Save Template</button>
+                    </div>
+
+                    <div id="editorContainer"
+                        style="flex: 1; display: flex; flex-direction: column; gap: 10px; position: relative;">
+                        <textarea id="templateEditor" spellcheck="false"
+                            placeholder="Select a template above to start editing..."
+                            style="flex: 1; font-family: 'Courier New', Courier, monospace; font-size: 14px; line-height: 1.5; padding: 15px; border: 1px solid var(--border); border-radius: 8px; resize: none; min-height: 400px;"></textarea>
+                        <div id="editorStatus" style="font-size: 12px; color: var(--text-light); text-align: right;">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

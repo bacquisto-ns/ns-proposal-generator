@@ -407,6 +407,94 @@ function exportToCSV() {
     });
 }
 
+// --- Email Template Editor ---
+async function loadTemplatesList() {
+    const selector = document.getElementById('templateSelector');
+    try {
+        const response = await fetch('/api/admin/email-templates');
+        if (!response.ok) throw new Error('Failed to fetch templates');
+        const templates = await response.json();
+
+        // Preserve current selection if possible
+        const currentVal = selector.value;
+        selector.innerHTML = '<option value="" disabled selected>Select a template...</option>';
+
+        templates.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            selector.appendChild(opt);
+        });
+
+        if (currentVal && templates.includes(currentVal)) {
+            selector.value = currentVal;
+        }
+    } catch (error) {
+        console.error('Error loading template list:', error);
+    }
+}
+
+async function loadTemplateContent(name) {
+    const editor = document.getElementById('templateEditor');
+    const saveBtn = document.getElementById('saveTemplateBtn');
+    const status = document.getElementById('editorStatus');
+
+    status.textContent = 'Loading...';
+    try {
+        const response = await fetch(`/api/admin/email-templates/${name}`);
+        if (!response.ok) throw new Error('Failed to load template');
+        const data = await response.json();
+
+        editor.value = data.content;
+        saveBtn.disabled = false;
+        status.textContent = 'Ready';
+
+        // Auto-resize if needed or set height logic
+    } catch (error) {
+        console.error('Error loading template content:', error);
+        status.textContent = 'Error loading template';
+        saveBtn.disabled = true;
+    }
+}
+
+async function saveTemplate() {
+    const selector = document.getElementById('templateSelector');
+    const editor = document.getElementById('templateEditor');
+    const saveBtn = document.getElementById('saveTemplateBtn');
+    const status = document.getElementById('editorStatus');
+
+    const name = selector.value;
+    const content = editor.value;
+
+    if (!name || !content) return;
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    status.textContent = 'Saving...';
+
+    try {
+        const response = await fetch(`/api/admin/email-templates/${name}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) throw new Error('Failed to save template');
+
+        status.textContent = 'Template saved successfully!';
+        setTimeout(() => {
+            status.textContent = 'Ready';
+        }, 3000);
+    } catch (error) {
+        console.error('Error saving template:', error);
+        status.textContent = 'Error saving template';
+        alert('Failed to save template: ' + error.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Template';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initial Load
     loadDashboard();
@@ -434,6 +522,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prevBtn) prevBtn.addEventListener('click', () => loadAuditLogs('first')); // Reset for now as simple prev is hard
     if (nextBtn) nextBtn.addEventListener('click', () => loadAuditLogs('next'));
 
+    // Template Editor Events
+    const templateSelector = document.getElementById('templateSelector');
+    if (templateSelector) {
+        templateSelector.addEventListener('change', (e) => loadTemplateContent(e.target.value));
+    }
+    const saveTemplateBtn = document.getElementById('saveTemplateBtn');
+    if (saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', saveTemplate);
+    }
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
@@ -451,6 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Grid is already loaded by loadDashboard, just showing the view
             } else if (selectedTab === 'auditLogs') {
                 loadAuditLogs('first');
+            } else if (selectedTab === 'templates') {
+                loadTemplatesList();
             }
         });
     });

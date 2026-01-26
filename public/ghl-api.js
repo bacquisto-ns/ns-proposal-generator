@@ -650,6 +650,8 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
     const payload = {
         name: opportunityName,
         employerName: business, // Pass business name explicitly for PDF generation
+        effectiveDate: formattedEffectiveDate, // Added for backend PDF generation
+        proposalDate: formattedProposalDate,   // Added for backend PDF generation
         pipelineId: CONFIG.pipelineId,
         stageId: hasOverride ? CONFIG.STAGE_PENDING_APPROVAL : CONFIG.STAGE_PROPOSAL_SENT,
         status: 'open',

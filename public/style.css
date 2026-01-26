@@ -570,6 +570,29 @@ button:active {
     color: white;
 }
 
+/* Tabs Styling */
+.tab-btn {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Template Editor Styling */
+#templateEditor {
+    transition: none; /* Disable glow transition for cleaner editing */
+    tab-size: 4;
+    -moz-tab-size: 4;
+}
+
+#templateEditor:focus {
+    box-shadow: none;
+    border-color: var(--secondary);
+}
+
 .table-container {
     overflow-x: auto;
 }
