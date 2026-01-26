@@ -13,11 +13,11 @@
         </div>
         <div style="padding: 30px;">
             <p style="font-size: 16px;">Hello,</p>
-            <p style="font-size: 16px;">Please find the pricing proposal for <strong>{{businessName}}</strong> attached
+            <p style="font-size: 16px;">Please find the pricing proposal for <strong>Test Business Inc.</strong> attached
                 or via the link below:</p>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{pdfUrl}}"
+                <a href="https://example.com/proposal.pdf"
                     style="background-color: #80B040; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
                     VIEW PROPOSAL PDF
                 </a>
@@ -38,22 +38,32 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{productTableRows}}
+                        
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">FSA</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">01-01-2026</td>
+        </tr>
+    
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">HSA</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">01-01-2026</td>
+        </tr>
+    
                     </tbody>
                 </table>
             </div>
 
-            {{proposalMessageBlock}}
+            <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;"><p style="margin: 0; font-size: 14px; color: #334155;">Test Message</p></div>
 
             <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
                 <p style="font-size: 14px;"><strong>Proposal Details:</strong><br>
-                    Effective Date: {{effectiveDate}}<br>
-                    Group: {{businessName}}</p>
+                    Effective Date: 01-01-2026<br>
+                    Group: Test Business Inc.</p>
             </div>
         </div>
     </div>
     <div style="max-width: 600px; margin: 0 auto; color: #94a3b8; padding: 20px; text-align: center; font-size: 11px;">
-        © {{currentYear}} NueSynergy. All rights reserved. <br>
+        © 2026 NueSynergy. All rights reserved. <br>
         This is an automated delivery from the NueSynergy Sales Intake Portal.
     </div>
 </body>

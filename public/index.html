@@ -22,132 +22,137 @@
         <div class="portal-layout">
             <div class="portal-main">
                 <div id="formSection">
-            <a href="admin.html" class="btn secondary-btn btn-admin">Admin Dashboard</a>
-            <div class="header">
-                <h1>NueSynergy</h1>
-                <p class="subtitle">Sales Opportunity Intake Portal</p>
-            </div>
-
-            <form id="opportunityForm">
-                <div class="form-grid">
-                    <!-- Opportunity Information -->
-                    <!-- Employer Name and Postal Code Split Row -->
-                    <!-- Employer Name and Postal Code Split Row -->
-                    <div class="form-group">
-                        <label for="employerName" class="required">Employer Name</label>
-                        <input type="text" id="employerName" name="employerName" placeholder="Enter company name"
-                            required>
+                    <a href="admin.html" class="btn secondary-btn btn-admin">Admin Dashboard</a>
+                    <div class="header">
+                        <h1>NueSynergy</h1>
+                        <p class="subtitle">Sales Opportunity Intake Portal</p>
                     </div>
 
-                    <div class="form-group">
-                        <label for="postalCode" class="required">Postal Code</label>
-                        <input type="text" id="postalCode" name="postalCode" placeholder="Enter zip code" required>
-                    </div>
+                    <form id="opportunityForm">
+                        <div class="form-grid">
+                            <!-- Opportunity Information -->
+                            <!-- Employer Name and Postal Code Split Row -->
+                            <!-- Employer Name and Postal Code Split Row -->
+                            <div class="form-group">
+                                <label for="employerName" class="required">Employer Name</label>
+                                <input type="text" id="employerName" name="employerName"
+                                    placeholder="Enter company name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="postalCode" class="required">Postal Code</label>
+                                <input type="text" id="postalCode" name="postalCode" placeholder="Enter zip code"
+                                    required>
+                            </div>
 
 
-                    <div class="form-group">
-                        <label for="brokerName" class="required">Broker Name</label>
-                        <div class="lookup-wrapper">
-                            <input type="text" id="brokerName" name="brokerName" placeholder="Full name" required
-                                autocomplete="off">
-                            <div id="brokerLookupResults" class="lookup-results"></div>
+                            <div class="form-group">
+                                <label for="brokerName" class="required">Broker Name</label>
+                                <div class="lookup-wrapper">
+                                    <input type="text" id="brokerName" name="brokerName" placeholder="Full name"
+                                        required autocomplete="off">
+                                    <div id="brokerLookupResults" class="lookup-results"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brokerEmail" class="required">Broker Email</label>
+                                <input type="email" id="brokerEmail" name="brokerEmail" placeholder="email@company.com"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="effectiveDate" class="required">Effective Date</label>
+                                <input type="date" id="effectiveDate" name="effectiveDate" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="proposalDate" class="required">Proposal Date</label>
+                                <input type="date" id="proposalDate" name="proposalDate" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="totalEmployees" class="required">Total Number of Employees</label>
+                                <input type="number" id="totalEmployees" name="totalEmployees" placeholder="e.g. 150"
+                                    required min="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="opportunitySource" class="required">Opportunity Source</label>
+                                <select id="opportunitySource" name="opportunitySource" required>
+                                    <option value="" disabled selected>Select source...</option>
+                                    <option value="Broker">Broker</option>
+                                    <option value="Direct">Direct</option>
+                                    <option value="Referral">Referral</option>
+                                    <option value="Inbound">Inbound</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brokerAgency">Broker Agency (if applicable)</label>
+                                <input type="text" id="brokerAgency" name="brokerAgency" placeholder="Agency name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="currentAdministrator">Current Administrator</label>
+                                <input type="text" id="currentAdministrator" name="currentAdministrator"
+                                    placeholder="Optional">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="benAdminSystem">Ben Admin System</label>
+                                <input type="text" id="benAdminSystem" name="benAdminSystem"
+                                    placeholder="Optional system name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="assignedTo" class="required">Opportunity Owner</label>
+                                <select id="assignedTo" name="assignedTo" required>
+                                    <option value="" disabled selected>Loading owners...</option>
+                                </select>
+                            </div>
+
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="brokerEmail" class="required">Broker Email</label>
-                        <input type="email" id="brokerEmail" name="brokerEmail" placeholder="email@company.com"
-                            required>
-                    </div>
+                        <!-- Product Selection Section -->
+                        <section class="products-section">
+                            <div class="section-header">
+                                <h3>Products & Pricing</h3>
+                                <button type="button" id="addProductBtn" class="secondary-btn">+ Add Product</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="product-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Pricing Tier</th>
+                                            <th>Employees</th>
+                                            <th>Eff. Date</th>
+                                            <th>PEPM Override ($)</th>
+                                            <th>Override</th>
+                                            <th>Monthly Minimum</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productBody">
+                                        <!-- Initial row will be added by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="visually-hidden" aria-hidden="true">
+                                <span id="grandTotal">$0.00</span>
+                                <span id="yearlyTotal">$0.00</span>
+                            </div>
+                            <div id="approvalNotice" class="approval-notice" style="display: none;">
+                                ⚠️ Notice: Price override applied. This request requires approval from President Josh
+                                Collins.
+                            </div>
+                        </section>
 
-                    <div class="form-group">
-                        <label for="effectiveDate" class="required">Effective Date</label>
-                        <input type="date" id="effectiveDate" name="effectiveDate" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="proposalDate" class="required">Proposal Date</label>
-                        <input type="date" id="proposalDate" name="proposalDate" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="totalEmployees" class="required">Total Number of Employees</label>
-                        <input type="number" id="totalEmployees" name="totalEmployees" placeholder="e.g. 150" required
-                            min="1">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="opportunitySource" class="required">Opportunity Source</label>
-                        <select id="opportunitySource" name="opportunitySource" required>
-                            <option value="" disabled selected>Select source...</option>
-                            <option value="Broker">Broker</option>
-                            <option value="Direct">Direct</option>
-                            <option value="Referral">Referral</option>
-                            <option value="Inbound">Inbound</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="brokerAgency">Broker Agency (if applicable)</label>
-                        <input type="text" id="brokerAgency" name="brokerAgency" placeholder="Agency name">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="currentAdministrator">Current Administrator</label>
-                        <input type="text" id="currentAdministrator" name="currentAdministrator" placeholder="Optional">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="benAdminSystem">Ben Admin System</label>
-                        <input type="text" id="benAdminSystem" name="benAdminSystem" placeholder="Optional system name">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="assignedTo" class="required">Opportunity Owner</label>
-                        <select id="assignedTo" name="assignedTo" required>
-                            <option value="" disabled selected>Loading owners...</option>
-                        </select>
-                    </div>
-
+                        <button type="submit" id="submitBtn">Create Opportunity</button>
+                    </form>
                 </div>
-
-                <!-- Product Selection Section -->
-                <section class="products-section">
-                    <div class="section-header">
-                        <h3>Products & Pricing</h3>
-                        <button type="button" id="addProductBtn" class="secondary-btn">+ Add Product</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="product-table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Pricing Tier</th>
-                                    <th>Employees</th>
-                                    <th>PEPM Override ($)</th>
-                                    <th>Override</th>
-                                    <th>Monthly Minimum</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="productBody">
-                                <!-- Initial row will be added by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="visually-hidden" aria-hidden="true">
-                        <span id="grandTotal">$0.00</span>
-                        <span id="yearlyTotal">$0.00</span>
-                    </div>
-                    <div id="approvalNotice" class="approval-notice" style="display: none;">
-                        ⚠️ Notice: Price override applied. This request requires approval from President Josh Collins.
-                    </div>
-                </section>
-
-                <button type="submit" id="submitBtn">Create Opportunity</button>
-            </form>
-        </div>
 
                 <!-- Success View -->
                 <div id="successMessage">
@@ -254,6 +259,9 @@
             </td>
             <td>
                 <input type="number" class="employees-input" value="0" min="0">
+            </td>
+            <td>
+                <input type="date" class="product-effective-date-input">
             </td>
             <td>
                 <input type="text" class="rate-input" readonly value="0.00">

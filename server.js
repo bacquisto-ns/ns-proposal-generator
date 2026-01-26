@@ -353,7 +353,11 @@ async function createProposalPDF(data, outputPath) {
             pop: hasProduct('POP')
         };
 
-        const getDate = (type) => (selection[type] || type === 'always') ? effDate : '-';
+        const getProductDate = (search) => {
+            const prod = (data.products || []).find(p => p.product.toLowerCase().includes(search.toLowerCase()));
+            if (!prod) return '-';
+            return prod.effectiveDate || effDate;
+        };
 
         page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: accentColor });
         const groupName = data.businessName || data.employerName || '';
@@ -362,26 +366,26 @@ async function createProposalPDF(data, outputPath) {
 
         // HSA
         y = drawSectionHeader(page16, y, 'HSA Plans');
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getDate('hsa'));
-        y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', getDate('hsa'), true);
-        y = drawRow(page16, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('hsa'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HSA'), getDate('hsa'), true);
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getProductDate('HSA'));
+        y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', getProductDate('HSA'), true);
+        y = drawRow(page16, y, 'Annual Renewal (AFTER YEAR 1)', '-', getProductDate('HSA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HSA'), getProductDate('HSA'), true);
         y -= 10;
 
         // FSA
         y = drawSectionHeader(page16, y, 'Section 125, FSA Plans');
-        y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getDate('fsa'));
-        y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getDate('fsa'), true);
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), getDate('fsa'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('FSA'), getDate('fsa'), true);
+        y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getProductDate('FSA'));
+        y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getProductDate('FSA'), true);
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), getProductDate('FSA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('FSA'), getProductDate('FSA'), true);
         y -= 10;
 
         // HRA
         y = drawSectionHeader(page16, y, 'Section 105, HRA Plans');
-        y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getDate('hra'));
-        y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('hra'), true);
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), getDate('hra'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HRA'), getDate('hra'), true);
+        y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getProductDate('HRA'));
+        y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getProductDate('HRA'), true);
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), getProductDate('HRA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HRA'), getProductDate('HRA'), true);
         y -= 10;
 
         // Miscellaneous
@@ -394,15 +398,15 @@ async function createProposalPDF(data, outputPath) {
 
         // LSA
         y = drawSectionHeader(page16, y, 'LSA Plans');
-        y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), getDate('lsa'));
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), getDate('lsa'), true);
+        y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), getProductDate('LSA'));
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), getProductDate('LSA'), true);
         y -= 10;
 
         // COBRA
         y = drawSectionHeader(page16, y, 'COBRAcare+ Administration');
-        y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getDate('cobra'));
-        y = drawRow(page16, y, 'Current COBRA Continuation', '-', getDate('cobra'), true);
-        y = drawRow(page16, y, 'Qualifying Event Notice', '-', getDate('cobra'), true);
+        y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getProductDate('COBRA'));
+        y = drawRow(page16, y, 'Current COBRA Continuation', '-', getProductDate('COBRA'), true);
+        y = drawRow(page16, y, 'Qualifying Event Notice', '-', getProductDate('COBRA'), true);
 
         // Page 16 Footer
         page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
@@ -417,16 +421,16 @@ async function createProposalPDF(data, outputPath) {
 
         // Direct Bill
         y = drawSectionHeader(page17, y, 'Direct Billing');
-        y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), getDate('direct'));
-        y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getDate('direct'), true);
-        y = drawRow(page17, y, 'Per Direct Bill Participant Per Month', findRate('Direct'), getDate('direct'), true);
-        y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', findMinFee('Direct'), getDate('direct'), true);
+        y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), getProductDate('Direct'));
+        y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getProductDate('Direct'), true);
+        y = drawRow(page17, y, 'Per Direct Bill Participant Per Month', findRate('Direct'), getProductDate('Direct'), true);
+        y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', findMinFee('Direct'), getProductDate('Direct'), true);
         y -= 10;
 
         // POP
         y = drawSectionHeader(page17, y, 'Section 125, Premium Only Plan (POP)');
-        y = drawRow(page17, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), getDate('pop'));
-        y = drawRow(page17, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getDate('pop'), true);
+        y = drawRow(page17, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), getProductDate('POP'));
+        y = drawRow(page17, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getProductDate('POP'), true);
         y -= 10;
 
         // Files
@@ -633,9 +637,18 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
             `
             : '';
 
+        const productTableRowsArr = (data.products || []).map(p => `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.product}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.effectiveDate || data.effectiveDate || 'N/A'}</td>
+            </tr>
+        `);
+        const productTableRows = productTableRowsArr.join('');
+
         const emailBody = loadTemplate('proposal-email', {
             businessName,
             pdfUrl,
+            productTableRows,
             proposalMessageBlock,
             effectiveDate: data.effectiveDate || 'N/A',
             currentYear: new Date().getFullYear()

@@ -57,12 +57,36 @@ const emailBody = loadTemplate('approval-email', {
     totalEmployees: '100', // Mocked
     effectiveDate: data.customFields.find(f => f.key === 'opportunity.effective_date')?.field_value || 'N/A',
     yearlyValue: data.monetaryValue,
+    productTableRows: data.products.map(p => `
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.product}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">01-01-2026</td>
+        </tr>
+    `).join(''),
     productRows,
     baseUrl,
     opportunityId,
     locationId: data.locationId,
     currentYear: new Date().getFullYear()
 });
+
+const proposalEmailBody = loadTemplate('proposal-email', {
+    businessName: data.name,
+    pdfUrl: 'https://example.com/proposal.pdf',
+    productTableRows: data.products.map(p => `
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.product}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">01-01-2026</td>
+        </tr>
+    `).join(''),
+    proposalMessageBlock: '<div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;"><p style="margin: 0; font-size: 14px; color: #334155;">Test Message</p></div>',
+    effectiveDate: '01-01-2026',
+    currentYear: new Date().getFullYear()
+});
+
+const proposalPreviewPath = path.join(__dirname, 'shared', 'email-templates', 'previews', 'proposal-email-preview.html');
+require('fs').writeFileSync(proposalPreviewPath, proposalEmailBody);
+console.log(`Proposal email preview generated: ${proposalPreviewPath}`);
 
 const previewPath = path.join(__dirname, 'shared', 'email-templates', 'previews', 'approval-email-preview.html');
 require('fs').writeFileSync(previewPath, emailBody);

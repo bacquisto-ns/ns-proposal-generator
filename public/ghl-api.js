@@ -431,11 +431,18 @@ function createProductRow() {
     const productSelect = mainRow.querySelector('.product-select');
     const tierSelect = mainRow.querySelector('.tier-select');
     const employeesInput = mainRow.querySelector('.employees-input');
+    const productEffDateInput = mainRow.querySelector('.product-effective-date-input');
     const rateInput = mainRow.querySelector('.rate-input');
     const overrideCheckbox = mainRow.querySelector('.override-checkbox');
     const waiveMinCheckbox = mainRow.querySelector('.waive-min-checkbox');
     const removeBtn = mainRow.querySelector('.remove-btn');
     const justificationInput = justificationRow.querySelector('.justification-input');
+
+    // Default row effective date to global if set
+    const globalEffDate = document.getElementById('effectiveDate')?.value;
+    if (globalEffDate && productEffDateInput) {
+        productEffDateInput.value = globalEffDate;
+    }
 
     if (mainRow) {
         mainRow.classList.add('row-enter');
@@ -468,6 +475,7 @@ function createProductRow() {
     }
 
     if (employeesInput) employeesInput.addEventListener('input', () => updateGrandTotal());
+    if (productEffDateInput) productEffDateInput.addEventListener('change', () => updateGrandTotal());
     if (rateInput) rateInput.addEventListener('input', () => updateGrandTotal());
     if (overrideCheckbox) overrideCheckbox.addEventListener('change', () => updateGrandTotal());
     if (waiveMinCheckbox) waiveMinCheckbox.addEventListener('change', () => updateGrandTotal());
@@ -578,7 +586,16 @@ function setDefaultDates() {
 const opportunityForm = document.getElementById('opportunityForm');
 if (opportunityForm) {
     opportunityForm.addEventListener('input', () => updateSummary());
-    opportunityForm.addEventListener('change', () => updateSummary());
+    opportunityForm.addEventListener('change', (e) => {
+        if (e.target.id === 'effectiveDate') {
+            const val = e.target.value;
+            const rowDates = productBody.querySelectorAll('.product-effective-date-input');
+            rowDates.forEach(input => {
+                if (!input.value) input.value = val;
+            });
+        }
+        updateSummary();
+    });
 }
 
 loadConfig().then(() => {
@@ -608,9 +625,13 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         const product = productSelect.value;
         const tier = row.querySelector('.tier-select').value;
         const employees = row.querySelector('.employees-input').value;
+        const rowEffDateRaw = row.querySelector('.product-effective-date-input').value;
         const rate = row.querySelector('.rate-input').value;
         const isOverride = row.querySelector('.override-checkbox').checked;
         const waivedMin = row.querySelector('.waive-min-checkbox').checked;
+
+        // Use formatDate helper for product effective date
+        const productEffectiveDate = formatDate(rowEffDateRaw) || formattedEffectiveDate;
         const nextRow = row.nextElementSibling;
         const justification = (isOverride && nextRow) ? nextRow.querySelector('.justification-input').value : '';
 
@@ -619,7 +640,7 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
         const bundled = isBundled();
         const minFee = prodData ? ((bundled && prodData.bundledMinFee) ? prodData.bundledMinFee : prodData.minFee) : 0;
 
-        products.push({ product, tier, employees, rate, isOverride, waivedMin, justification, minFee });
+        products.push({ product, tier, employees, effectiveDate: productEffectiveDate, rate, isOverride, waivedMin, justification, minFee });
         if (isOverride) hasOverride = true;
     });
 
