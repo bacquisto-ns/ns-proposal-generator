@@ -596,33 +596,60 @@ app.get('/api/users', async (req, res) => {
     try {
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
+        console.log(`[Users API] Requesting users for location: ${GHL_LOCATION_ID}`);
+
         const response = await ghlService.getUsers();
-        res.json(response.users || response);
+        const users = response.users || response;
+
+        console.log(`[Users API] Successfully fetched ${Array.isArray(users) ? users.length : 0} users.`);
+        res.json(users);
     } catch (error) {
-        res.status(500).json({ error: 'Failed' });
+        console.error('[Users API] Error fetching users:', error.response ? JSON.stringify(error.response.data) : error.message);
+        res.status(error.response ? error.response.status : 500).json({
+            error: 'Failed to fetch users',
+            details: error.response ? error.response.data : error.message
+        });
     }
 });
 
 app.get('/api/contacts', async (req, res) => {
     try {
+        const query = req.query.query || '';
         const apiKey = ghlApiKey.value();
         const ghlService = await getGHLService(apiKey);
-        const response = await ghlService.searchContacts(req.query.query || '');
-        res.json(response.contacts || []);
+        console.log(`[Contacts API] Searching contacts for location: ${GHL_LOCATION_ID}, query: ${query}`);
+
+        const response = await ghlService.searchContacts(query, { limit: 50 });
+        const contacts = response.contacts || [];
+
+        console.log(`[Contacts API] Successfully fetched ${contacts.length} contacts.`);
+        res.json(contacts);
     } catch (error) {
-        res.status(500).json({ error: 'Failed' });
+        console.error('[Contacts API] Error fetching contacts:', error.response ? JSON.stringify(error.response.data) : error.message);
+        res.status(error.response ? error.response.status : 500).json({
+            error: 'Failed to fetch contacts',
+            details: error.response ? error.response.data : error.message
+        });
     }
 });
 
 app.get('/api/opportunities', async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit) || 20;
-        const snapshot = await admin.firestore().collection('opportunities').orderBy('createdAt', 'desc').limit(limit).get();
+        console.log('[Opportunities API] Fetching opportunities...');
+        const limit = parseInt(req.query.limit) || 50;
+        const snapshot = await admin.firestore().collection('opportunities')
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+
         const opportunities = [];
         snapshot.forEach(doc => opportunities.push({ id: doc.id, ...doc.data() }));
+
+        console.log(`[Opportunities API] Found ${opportunities.length} records.`);
         res.json(opportunities);
     } catch (error) {
-        res.status(500).json({ error: 'Failed' });
+        console.error('[Opportunities API] Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch opportunities' });
     }
 });
 
@@ -824,8 +851,22 @@ app.get('/api/approve-opportunity', async (req, res) => {
             });
         }
 
-        res.send('Approved');
+        res.send(`
+            <html>
+                <body style="font-family: sans-serif; text-align: center; padding: 50px; background-color: #f8fafc;">
+                    <div style="background: white; max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <div style="color: #80B040; font-size: 64px; margin-bottom: 20px;">✓</div>
+                        <h2 style="color: #003366; margin-bottom: 15px;">Opportunity Approved</h2>
+                        <p style="color: #64748b; line-height: 1.6;">The price override for this opportunity has been successfully approved. A note has been added to the opportunity in GHL.</p>
+                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                             <p style="font-size: 13px; color: #94a3b8;">You can now close this window.</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
     } catch (e) {
+        console.error('Approval Error:', e.message);
         res.status(500).send('Error');
     }
 });
@@ -857,21 +898,24 @@ app.get('/api/reject-opportunity', async (req, res) => {
                 await ghlService.sendMessage({
                     type: 'Email',
                     contactId: joshCollinsContactId, // Send to Josh but CC the owner
-                    emailFrom: 'sales-intake@nuesynergy.com',
-                    subject: `Proposal REJECTED: ${businessName}`,
                     cc: [ownerEmail],
                     html: `
-                        <div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                            <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
-                                <h2 style="margin: 0;">Proposal Rejected</h2>
-                            </div>
-                            <div style="padding: 30px;">
-                                <p>The price override for <strong>${businessName}</strong> has been rejected by Josh Collins.</p>
-                                <p><strong>Note:</strong> No proposal email was sent to the broker. If changes are needed, please update the opportunity in GHL and resubmit if necessary.</p>
-                                <p><a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list">View Opportunity in GHL</a></p>
+                    <div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                        <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0;">Proposal Rejected</h2>
+                        </div>
+                        <div style="padding: 30px;">
+                            <p>The price override for <strong>${businessName}</strong> has been rejected by Josh Collins.</p>
+                            <p><strong>Note:</strong> No proposal email was sent to the broker. If changes are needed, please update the opportunity in GHL and resubmit if necessary.</p>
+                             <div style="text-align: center; margin-top: 30px;">
+                                <a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list" 
+                                   style="background-color: #003366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                                    View in GHL
+                                </a>
                             </div>
                         </div>
-                    `
+                    </div>
+                `
                 });
             }
 
@@ -879,22 +923,69 @@ app.get('/api/reject-opportunity', async (req, res) => {
                 'approval.status': 'rejected',
                 'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
             });
-        }
 
-        res.send('Rejected');
+            res.send(`
+            <html>
+                <body style="font-family: sans-serif; text-align: center; padding: 50px; background-color: #f8fafc;">
+                    <div style="background: white; max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <div style="color: #d32f2f; font-size: 64px; margin-bottom: 20px;">✕</div>
+                        <h2 style="color: #630000; margin-bottom: 15px;">Opportunity Rejected</h2>
+                        <p style="color: #64748b; line-height: 1.6;">The price override for this opportunity has been rejected. A note has been added to the opportunity in GHL.</p>
+                        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                             <p style="font-size: 13px; color: #94a3b8;">You can now close this window.</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        } else {
+            res.status(404).send('Opportunity not found in system records.');
+        }
     } catch (e) {
-        res.status(500).send('Error');
+        console.error('Rejection Error:', e.message);
+        res.status(500).send('Error processing rejection');
     }
 });
 
 app.get('/api/audit-logs', async (req, res) => {
     try {
-        const snapshot = await admin.firestore().collection('audit_logs').orderBy('timestamp', 'desc').limit(50).get();
+        console.log('[Audit Logs API] Fetching audit logs...');
+        const limit = parseInt(req.query.limit) || 50;
+        const startAfter = req.query.startAfter;
+        const action = req.query.action;
+        const status = req.query.status;
+        const resourceId = req.query.resourceId;
+
+        let query = admin.firestore().collection('audit_logs');
+
+        // Apply filters
+        if (action) query = query.where('action', '==', action);
+        if (status) query = query.where('status', '==', status);
+        if (resourceId) query = query.where('resourceId', '==', resourceId);
+
+        // Apply ordering and limits
+        query = query.orderBy('timestamp', 'desc').limit(limit);
+
+        if (startAfter) {
+            const seconds = parseInt(startAfter);
+            if (!isNaN(seconds)) {
+                const ts = new admin.firestore.Timestamp(seconds, 0);
+                query = query.startAfter(ts);
+            }
+        }
+
+        const snapshot = await query.get();
         const logs = [];
         snapshot.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
+
+        console.log(`[Audit Logs API] Found ${logs.length} records.`);
         res.json(logs);
-    } catch (e) {
-        res.status(500).send('Error');
+    } catch (error) {
+        console.error('[Audit Logs API] Error:', error.message);
+        res.status(500).json({
+            error: 'Failed to fetch audit logs',
+            details: error.message
+        });
     }
 });
 

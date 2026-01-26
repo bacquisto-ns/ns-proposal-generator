@@ -1126,47 +1126,44 @@ app.get('/api/reject-opportunity', async (req, res) => {
 
         if (!snapshot.empty) {
             const doc = snapshot.docs[0];
+            const oppData = doc.data(); // Fetch data to use below
+            const assignedTo = oppData?.assignment?.assignedToUser;
+            const ownerEmail = await resolveOwnerEmail(assignedTo, ghlService);
+
+            if (ownerEmail) {
+                const businessName = oppData?.employerName || 'Group';
+                const joshCollinsContactId = '357NYkROmrFIMPiAdpUc';
+
+                console.log(`[Rejection API] Sending notification to owner ${ownerEmail}`);
+                await ghlService.sendMessage({
+                    type: 'Email',
+                    contactId: joshCollinsContactId, // Send to Josh but CC the owner
+                    emailFrom: 'sales-intake@nuesynergy.com',
+                    subject: `Proposal REJECTED: ${businessName}`,
+                    cc: [ownerEmail],
+                    html: `
+                        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                            <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
+                                <h2 style="margin: 0;">Proposal Rejected</h2>
+                            </div>
+                            <div style="padding: 30px;">
+                                <p>The price override for <strong>${businessName}</strong> has been rejected by Josh Collins.</p>
+                                <p><strong>Note:</strong> No proposal email was sent to the broker. If changes are needed, please update the opportunity in GHL and resubmit if necessary.</p>
+                                <div style="text-align: center; margin-top: 30px;">
+                                    <a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list" 
+                                       style="background-color: #003366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                                        View in GHL
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                });
+            }
+
             await doc.ref.update({
                 'approval.status': 'rejected',
                 'approval.updatedAt': admin.firestore.FieldValue.serverTimestamp()
-            });
-        }
-
-        // 2. Add note to GHL
-        const ghlService = await getGHLService(GHL_API_KEY);
-        await ghlService.addOpportunityNote(opportunityId, '**Price override rejected by Josh Collins via email.**');
-
-        // 3. Notify Opportunity Owner
-        const assignedTo = oppData?.assignment?.assignedToUser;
-        const ownerEmail = await resolveOwnerEmail(assignedTo, ghlService);
-        if (ownerEmail) {
-            const businessName = oppData?.employerName || 'Group';
-            const joshCollinsContactId = '357NYkROmrFIMPiAdpUc';
-
-            console.log(`[Rejection API] Sending notification to owner ${ownerEmail}`);
-            await ghlService.sendMessage({
-                type: 'Email',
-                contactId: joshCollinsContactId, // Send to Josh but CC the owner
-                emailFrom: 'sales-intake@nuesynergy.com',
-                subject: `Proposal REJECTED: ${businessName}`,
-                cc: [ownerEmail],
-                html: `
-                    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                        <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
-                            <h2 style="margin: 0;">Proposal Rejected</h2>
-                        </div>
-                        <div style="padding: 30px;">
-                            <p>The price override for <strong>${businessName}</strong> has been rejected by Josh Collins.</p>
-                            <p><strong>Note:</strong> No proposal email was sent to the broker. If changes are needed, please update the opportunity in GHL and resubmit if necessary.</p>
-                            <div style="text-align: center; margin-top: 30px;">
-                                <a href="https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/opportunities/list" 
-                                   style="background-color: #003366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                                    View in GHL
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `
             });
         }
 
