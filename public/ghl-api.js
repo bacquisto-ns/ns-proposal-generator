@@ -614,6 +614,17 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
+    // Helper to format YYYY-MM-DD to MM-DD-YYYY
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        return `${parts[1]}-${parts[2]}-${parts[0]}`;
+    };
+
+    const formattedEffectiveDate = formatDate(data.effectiveDate);
+    const formattedProposalDate = formatDate(data.proposalDate) || formatDate(new Date().toISOString().split('T')[0]);
+
     // Collect products
     const products = [];
     let hasOverride = false;
@@ -647,17 +658,6 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
     // 1. Automated Opportunity Name Generation
     const broker = data.brokerAgency || data.brokerName || data.opportunitySource || 'Direct';
     const business = data.employerName;
-
-    // Helper to format YYYY-MM-DD to MM-DD-YYYY
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        const parts = dateStr.split('-');
-        if (parts.length !== 3) return dateStr;
-        return `${parts[1]}-${parts[2]}-${parts[0]}`;
-    };
-
-    const formattedEffectiveDate = formatDate(data.effectiveDate);
-    const formattedProposalDate = formatDate(data.proposalDate) || formatDate(new Date().toISOString().split('T')[0]);
 
     const opportunityName = `${broker} - ${business} - ${formattedEffectiveDate}`;
 
