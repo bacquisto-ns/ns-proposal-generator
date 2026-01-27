@@ -109,15 +109,16 @@ function initOpportunityGrid(data) {
 
     oppGrid = new gridjs.Grid({
         columns: [
-            { name: 'Date', formatter: (cell) => formatDate(cell) },
-            { name: 'Employer', formatter: (cell) => gridjs.html(`<strong>${escapeHtml(cell)}</strong>`) },
-            'Effective',
-            'Broker',
-            { name: 'Products', formatter: (cell) => gridjs.html(`<small>${escapeHtml(cell)}</small>`) },
-            { name: 'Employees' },
-            { name: 'Yearly Total', formatter: (cell) => `$${parseFloat(cell || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { name: 'Date', width: '100px', formatter: (cell) => formatDate(cell) },
+            { name: 'Employer', width: '180px', formatter: (cell) => gridjs.html(`<strong>${escapeHtml(cell)}</strong>`) },
+            { name: 'Effective', width: '110px' },
+            { name: 'Broker', width: '150px' },
+            { name: 'Products', width: '250px', formatter: (cell) => gridjs.html(`<small>${escapeHtml(cell)}</small>`) },
+            { name: 'Employees', width: '100px' },
+            { name: 'Yearly Total', width: '130px', formatter: (cell) => `$${parseFloat(cell || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
             {
                 name: 'Status',
+                width: '100px',
                 formatter: (cell) => {
                     const cls = cell === 'new' ? 'badge-new' : 'badge-default';
                     return gridjs.html(`<span class="badge ${cls}">${escapeHtml(cell)}</span>`);
@@ -125,10 +126,12 @@ function initOpportunityGrid(data) {
             },
             {
                 name: 'GHL',
+                width: '80px',
                 formatter: (cell) => cell ? gridjs.html('<span class="text-success">Synced</span>') : gridjs.html('<span class="text-danger">Failed</span>')
             },
             {
                 name: 'Actions',
+                width: '180px',
                 formatter: (cell, row) => {
                     return gridjs.html(`<button class="btn btn-sm btn-primary send-proposal-btn" data-id="${cell}">Download & Send</button>`);
                 }
