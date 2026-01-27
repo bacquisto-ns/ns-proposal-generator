@@ -352,7 +352,7 @@ async function createProposalPDF(data, outputPath) {
         };
 
         // --- PAGE 16 ---
-        let page16 = finalDoc.addPage();
+        let page16 = finalDoc.addPage([612, 792]);
         let { height } = page16.getSize();
 
         // Banner
@@ -361,7 +361,7 @@ async function createProposalPDF(data, outputPath) {
         page16.drawText('PROPOSAL: PLAN OPTIONS', { x: 50, y: height - 75, size: 16, font: boldFont, color: rgb(1, 1, 1) });
         page16.drawText('About NueSynergy', { x: 50, y: height - 90, size: 12, font: regularFont, color: rgb(1, 1, 1) });
 
-        let y = height - 120;
+        let y = height - 105;
         let effDate = data.effectiveDate || '-';
         if (effDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const parts = effDate.split('-');
@@ -450,13 +450,13 @@ async function createProposalPDF(data, outputPath) {
         page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
 
         // --- PAGE 17 ---
-        let page17 = finalDoc.addPage();
+        let page17 = finalDoc.addPage([612, 792]);
         page17.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: secondaryColor });
         page17.drawRectangle({ x: 0, y: height - 100, width, height: 60, color: primaryColor });
         page17.drawText('PROPOSAL: BILLING SOLUTIONS & OTHER SERVICES', { x: 50, y: height - 75, size: 16, font: boldFont, color: rgb(1, 1, 1) });
         page17.drawText('Administrative Services', { x: 50, y: height - 90, size: 12, font: regularFont, color: rgb(1, 1, 1) });
 
-        y = height - 120;
+        y = height - 105;
 
         // COBRA (Moved from Page 16)
         y = drawSectionHeader(page17, y, 'COBRAcare+ Administration');
