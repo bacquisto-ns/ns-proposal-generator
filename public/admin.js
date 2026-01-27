@@ -142,7 +142,7 @@ function initOpportunityGrid(data) {
             opp.employerName || 'N/A',
             opp.details?.effectiveDate || '-',
             opp.broker?.name || 'N/A',
-            (opp.products || []).map(p => p.name).join(', '),
+            (opp.products || []).map(p => p.product).join(', '),
             opp.details?.totalEmployees || 0,
             opp.financials?.yearlyTotal || 0,
             opp.status || 'new',
