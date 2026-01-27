@@ -505,18 +505,30 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page17, y, 'COBRA Qualifying Event Notices', '-', selection.cobra ? effDate : '-');
         y -= 10;
 
-        // Proposal Notes
-        page17.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: primaryColor });
-        page17.drawText('Proposal Notes', { x: tableX + 10, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
-        y -= 20;
-
-        page17.drawRectangle({ x: tableX, y: y - 55, width: tableWidth, height: 55, borderColor: borderColor, borderLineWidth: 0.5 });
-        page17.drawText('NueSynergy smart debit cards are always free', { x: tableX + 10, y: y - 14, size: 9, font: regularFont, color: textColor });
-        page17.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: tableX + 10, y: y - 26, size: 9, font: regularFont, color: textColor });
-        page17.drawText('Outstanding Service is always included-', { x: tableX + 10, y: y - 40, size: 9, font: regularFont, color: textColor });
-
         // Page 17 Footer
         page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
+
+        // --- PAGE 18 ---
+        let page18 = finalDoc.addPage([612, 792]);
+        page18.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: secondaryColor });
+        page18.drawRectangle({ x: 0, y: height - 100, width, height: 60, color: primaryColor });
+        page18.drawText('PROPOSAL: ADDITIONAL INFORMATION', { x: 50, y: height - 75, size: 16, font: boldFont, color: rgb(1, 1, 1) });
+        page18.drawText('About NueSynergy', { x: 50, y: height - 90, size: 12, font: regularFont, color: rgb(1, 1, 1) });
+
+        y = height - 105;
+
+        // Proposal Notes
+        page18.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: primaryColor });
+        page18.drawText('Proposal Notes', { x: tableX + 10, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        y -= 20;
+
+        page18.drawRectangle({ x: tableX, y: y - 55, width: tableWidth, height: 55, borderColor: borderColor, borderLineWidth: 0.5 });
+        page18.drawText('NueSynergy smart debit cards are always free', { x: tableX + 10, y: y - 14, size: 9, font: regularFont, color: textColor });
+        page18.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: tableX + 10, y: y - 26, size: 9, font: regularFont, color: textColor });
+        page18.drawText('Outstanding Service is always included-', { x: tableX + 10, y: y - 40, size: 9, font: regularFont, color: textColor });
+
+        // Page 18 Footer
+        page18.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
 
         const pdfBytes = await finalDoc.save();
         fs.writeFileSync(outputPath, pdfBytes);
