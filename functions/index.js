@@ -143,23 +143,6 @@ app.get('/api/admin/email-templates/:name', async (req, res) => {
     }
 });
 
-app.post('/api/admin/email-templates/:name', async (req, res) => {
-    try {
-        const { name } = req.params;
-        const { content } = req.body;
-        if (!content) return res.status(400).json({ error: 'Content is required' });
-
-        const templatePath = path.join(__dirname, 'shared', 'email-templates', `${name}.html`);
-        fs.writeFileSync(templatePath, content, 'utf8');
-
-        await logAudit('TEMPLATE_UPDATE', 'System', name, { name }, req, 'SUCCESS');
-        res.json({ message: 'Template updated successfully' });
-    } catch (error) {
-        console.error('[Admin] Failed to update template:', error);
-        res.status(500).json({ error: 'Failed to update template' });
-    }
-});
-
 app.post('/api/admin/email-templates/preview', async (req, res) => {
     try {
         const { content, data } = req.body;
@@ -178,6 +161,23 @@ app.post('/api/admin/email-templates/preview', async (req, res) => {
     } catch (error) {
         console.error('[Admin] Failed to preview template:', error);
         res.status(500).json({ error: 'Failed to preview template' });
+    }
+});
+
+app.post('/api/admin/email-templates/:name', async (req, res) => {
+    try {
+        const { name } = req.params;
+        const { content } = req.body;
+        if (!content) return res.status(400).json({ error: 'Content is required' });
+
+        const templatePath = path.join(__dirname, 'shared', 'email-templates', `${name}.html`);
+        fs.writeFileSync(templatePath, content, 'utf8');
+
+        await logAudit('TEMPLATE_UPDATE', 'System', name, { name }, req, 'SUCCESS');
+        res.json({ message: 'Template updated successfully' });
+    } catch (error) {
+        console.error('[Admin] Failed to update template:', error);
+        res.status(500).json({ error: 'Failed to update template' });
     }
 });
 

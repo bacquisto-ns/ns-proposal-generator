@@ -155,7 +155,7 @@ body.embed-mode .container {
     gap: 12px;
 }
 
-.summary-total + .summary-total {
+.summary-total+.summary-total {
     margin-top: 8px;
 }
 
@@ -194,7 +194,7 @@ body.embed-mode .container {
     color: var(--text);
 }
 
-.summary-row + .summary-row {
+.summary-row+.summary-row {
     margin-top: 10px;
 }
 
@@ -488,7 +488,7 @@ button:active {
     .header h1 {
         font-size: 1.5rem;
     }
-    
+
     .btn-admin {
         position: static;
         display: block;
@@ -501,15 +501,17 @@ button:active {
     .container {
         padding: 1rem;
     }
-    
+
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
-    .product-table th, .product-table td {
+
+    .product-table th,
+    .product-table td {
         padding: 0.5rem;
         font-size: 0.85rem;
     }
+
     .form-grid {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -583,7 +585,8 @@ button:active {
 
 /* Template Editor Styling */
 #templateEditor {
-    transition: none; /* Disable glow transition for cleaner editing */
+    transition: none;
+    /* Disable glow transition for cleaner editing */
     tab-size: 4;
     -moz-tab-size: 4;
 }
@@ -604,49 +607,49 @@ table {
     margin-bottom: 20px;
 }
 
-/* Product */
-th:nth-child(1),
-td:nth-child(1) {
-    width: 30%;
+/* Product Table Scoped Widths (8 columns) */
+.product-table th:nth-child(1),
+.product-table td:nth-child(1) {
+    width: 22%;
 }
 
-/* Tier */
-th:nth-child(2),
-td:nth-child(2) {
-    width: 24%;
+.product-table th:nth-child(2),
+.product-table td:nth-child(2) {
+    width: 14%;
 }
 
-/* Employees */
-th:nth-child(3),
-td:nth-child(3) {
-    width: 10%;
+.product-table th:nth-child(3),
+.product-table td:nth-child(3) {
+    width: 8%;
     text-align: center;
 }
 
-/* Rate */
-th:nth-child(4),
-td:nth-child(4) {
-    width: 16%;
+.product-table th:nth-child(4),
+.product-table td:nth-child(4) {
+    width: 12%;
     text-align: center;
 }
 
-/* Override */
-th:nth-child(5),
-td:nth-child(5) {
-    width: 7%;
+.product-table th:nth-child(5),
+.product-table td:nth-child(5) {
+    width: 14%;
     text-align: center;
 }
 
-/* Waive Min */
-th:nth-child(6),
-td:nth-child(6) {
-    width: 9%;
+.product-table th:nth-child(6),
+.product-table td:nth-child(6) {
+    width: 8%;
     text-align: center;
 }
 
-/* Remove column */
-th:nth-child(7),
-td:nth-child(7) {
+.product-table th:nth-child(7),
+.product-table td:nth-child(7) {
+    width: 18%;
+    text-align: center;
+}
+
+.product-table th:nth-child(8),
+.product-table td:nth-child(8) {
     width: 4%;
     text-align: center;
 }
@@ -670,7 +673,8 @@ td {
 
 .product-table select,
 .product-table input {
-    padding: 8px 6px; /* Reduced horizontal padding */
+    padding: 8px 6px;
+    /* Reduced horizontal padding */
     font-size: 0.9rem;
     border-radius: 8px;
     width: 100%;
@@ -681,7 +685,8 @@ td {
     background-color: #f8fafc;
     border-color: transparent;
     cursor: default;
-    text-align: center; /* Center the rate text */
+    text-align: center;
+    /* Center the rate text */
 }
 
 .row-total {
@@ -830,6 +835,7 @@ tfoot td {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -840,9 +846,11 @@ tfoot td {
     0% {
         transform: translateY(0) scale(1);
     }
+
     40% {
         transform: translateY(-1px) scale(1.03);
     }
+
     100% {
         transform: translateY(0) scale(1);
     }
@@ -853,6 +861,7 @@ tfoot td {
         opacity: 0;
         transform: translateY(-6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -864,6 +873,7 @@ tfoot td {
         opacity: 1;
         transform: translateY(0);
     }
+
     to {
         opacity: 0;
         transform: translateY(-6px);
@@ -889,19 +899,43 @@ tfoot td {
     overflow-x: hidden;
 }
 
-.admin-page .gridjs-table,
-.admin-page #auditTable {
+.admin-page .gridjs-table {
     width: 100%;
     table-layout: fixed;
 }
 
+.admin-page #auditTable {
+    width: 100%;
+    table-layout: auto;
+}
+
 .admin-page .gridjs-th,
-.admin-page .gridjs-td,
-.admin-page #auditTable th,
-.admin-page #auditTable td {
+.admin-page .gridjs-td {
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+.admin-page #auditTable th,
+.admin-page #auditTable td {
+    white-space: nowrap;
+    padding: 12px 16px;
+}
+
+/* Audit Table Column Specifics */
+#auditTable td:nth-child(6) {
+    white-space: normal;
+    word-break: break-all;
+    min-width: 180px;
+}
+
+#auditTable td:nth-child(4) {
+    font-size: 0.85rem;
+}
+
+#auditTable td:nth-child(1) {
+    color: var(--text-light);
+    font-family: monospace;
 }
 
 .container.full-width {
@@ -1258,6 +1292,7 @@ pre {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .summary-card,
     .value-bump,
     .product-main-row.row-enter,
