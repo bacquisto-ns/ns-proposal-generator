@@ -380,37 +380,49 @@ async function createProposalPDF(data, outputPath) {
             return prod.effectiveDate || effDate;
         };
 
-        page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: accentColor });
         const groupName = data.businessName || data.employerName || '';
-        page16.drawText(`GROUP: ${groupName}`, { x: 60, y: y - 14, size: 10, font: boldFont, color: textColor });
+        const proposalDate = data.proposalDate || new Date().toLocaleDateString();
+
+        page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: accentColor });
+        page16.drawText(`GROUP: ${groupName}`, { x: 60, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: 250, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: 400, y: y - 14, size: 9, font: boldFont, color: textColor });
         y -= 25;
 
         // HSA
         y = drawSectionHeader(page16, y, 'HSA Plans');
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getProductDate('HSA'));
-        y = drawRow(page16, y, 'Spouse Saver Incentive Account', '-', getProductDate('HSA'), true);
+        y = drawRow(page16, y, 'HSA Plans Effective Date', '', getProductDate('HSA'));
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getProductDate('HSA'), true);
+        y -= 10;
+
+        y = drawSectionHeader(page16, y, 'Spouse Saver Incentive Account');
+        y = drawRow(page16, y, 'Spouse Saver Implementation, Design & Installation', '-', getProductDate('HSA'));
         y = drawRow(page16, y, 'Annual Renewal (AFTER YEAR 1)', '-', getProductDate('HSA'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HSA'), getProductDate('HSA'), true);
+        y = drawRow(page16, y, 'Per Participant Per Month', '-', getProductDate('HSA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('HSA'), getProductDate('HSA'), true);
         y -= 10;
 
         // FSA
         y = drawSectionHeader(page16, y, 'Section 125, FSA Plans');
+        page16.drawText('»HEALTH CARE, DEPENDENT CARE, LIMITED PURPOSE, COMMUTER, ADOPTION', { x: 180, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getProductDate('FSA'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getProductDate('FSA'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), getProductDate('FSA'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('FSA'), getProductDate('FSA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('FSA'), getProductDate('FSA'), true);
         y -= 10;
 
         // HRA
         y = drawSectionHeader(page16, y, 'Section 105, HRA Plans');
+        page16.drawText('» TRADITIONAL, ICHRA, QSEHRA', { x: 180, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getProductDate('HRA'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getProductDate('HRA'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), getProductDate('HRA'), true);
-        y = drawRow(page16, y, 'Monthly Minimum', findMinFee('HRA'), getProductDate('HRA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('HRA'), getProductDate('HRA'), true);
         y -= 10;
 
         // Miscellaneous
         y = drawSectionHeader(page16, y, 'Miscellaneous Services');
+        page16.drawText('» HSA, FSA, HRA PLANS', { x: 180, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         const miscDate = (selection.hsa || selection.fsa || selection.hra || selection.lsa) ? effDate : '-';
         y = drawRow(page16, y, 'eClaims Manager Per Participant, Monthly', '-', miscDate);
         y = drawRow(page16, y, 'NueSynergy Smart Mobile App', 'Included', miscDate);
@@ -419,15 +431,21 @@ async function createProposalPDF(data, outputPath) {
 
         // LSA
         y = drawSectionHeader(page16, y, 'LSA Plans');
+        page16.drawText('» HEALTH & WELLNESS, STUDENT LOAN PAYBACK, ACTIVITY FEES, APPAREL', { x: 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), getProductDate('LSA'));
+        y = drawRow(page16, y, 'Annual Renewal (WAIVED 1st YEAR)', '-', getProductDate('LSA'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), getProductDate('LSA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('LSA'), getProductDate('LSA'), true);
         y -= 10;
 
         // COBRA
         y = drawSectionHeader(page16, y, 'COBRAcare+ Administration');
         y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getProductDate('COBRA'));
         y = drawRow(page16, y, 'Current COBRA Continuation', '-', getProductDate('COBRA'), true);
+        y = drawRow(page16, y, 'Initial Notice (OPTIONAL)', '-', getProductDate('COBRA'), true);
         y = drawRow(page16, y, 'Qualifying Event Notice', '-', getProductDate('COBRA'), true);
+        y = drawRow(page16, y, 'Open Enrollment Notice', '-', getProductDate('COBRA'), true);
+        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('COBRA'), getProductDate('COBRA'), true);
 
         // Page 16 Footer
         page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
@@ -436,15 +454,26 @@ async function createProposalPDF(data, outputPath) {
         let page17 = finalDoc.addPage();
         page17.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: secondaryColor });
         page17.drawRectangle({ x: 0, y: height - 100, width, height: 60, color: primaryColor });
-        page17.drawText('PROPOSAL: CONTINUED', { x: 50, y: height - 75, size: 16, font: boldFont, color: rgb(1, 1, 1) });
+        page17.drawText('PROPOSAL: BILLING SOLUTIONS & OTHER SERVICES', { x: 50, y: height - 75, size: 16, font: boldFont, color: rgb(1, 1, 1) });
+        page17.drawText('Administrative Services', { x: 50, y: height - 90, size: 12, font: regularFont, color: rgb(1, 1, 1) });
 
         y = height - 120;
+
+        // Combined Billing
+        y = drawSectionHeader(page17, y, 'Combined Billing');
+        y = drawRow(page17, y, 'Implementation, Setup, and Testing (YEAR 1)', '-', getProductDate('Billing'));
+        y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getProductDate('Billing'), true);
+        y = drawRow(page17, y, 'Per Benefit Enrolled Employee Per Month', findRate('Billing'), getProductDate('Billing'), true);
+        y = drawRow(page17, y, 'Per Carrier Invoice, Monthly', '-', getProductDate('Billing'), true);
+        y = drawRow(page17, y, 'Monthly Minimum', '-', getProductDate('Billing'), true);
+        y -= 10;
 
         // Direct Bill
         y = drawSectionHeader(page17, y, 'Direct Billing');
         y = drawRow(page17, y, 'Implementation & Setup (YEAR 1)', findRate('Direct'), getProductDate('Direct'));
         y = drawRow(page17, y, 'Annual Renewal (AFTER YEAR 1)', '-', getProductDate('Direct'), true);
         y = drawRow(page17, y, 'Per Direct Bill Participant Per Month', findRate('Direct'), getProductDate('Direct'), true);
+        y = drawRow(page17, y, 'Standard Notices, Per Participant Event', '-', getProductDate('Direct'), true);
         y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', findMinFee('Direct'), getProductDate('Direct'), true);
         y -= 10;
 
@@ -461,20 +490,18 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page17, y, 'Enrollment/Eligibility File (New Enrollment and Terminations)', '-', fileDate);
         y = drawRow(page17, y, 'Payroll/Contribution File', '-', fileDate);
         y = drawRow(page17, y, 'COBRA Initial Notices', '-', selection.cobra ? effDate : '-');
+        y = drawRow(page17, y, 'COBRA Qualifying Event Notices', '-', selection.cobra ? effDate : '-');
+        y -= 10;
 
-        const customMessage = String(data.proposalMessage || '').trim();
-        if (customMessage) {
-            const lineHeight = 12;
-            y -= 28;
-            page17.drawText('Custom Message', { x: 50, y, size: 10, font: boldFont, color: textColor });
-            y -= 14;
-            const lines = wrapText(customMessage, 500, 9, regularFont);
-            const maxLines = Math.max(Math.floor((y - 40) / lineHeight), 0);
-            lines.slice(0, maxLines).forEach(line => {
-                page17.drawText(line, { x: 50, y, size: 9, font: regularFont, color: textColor });
-                y -= lineHeight;
-            });
-        }
+        // Proposal Notes
+        page17.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: primaryColor });
+        page17.drawText('Proposal Notes', { x: 60, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        y -= 20;
+
+        page17.drawRectangle({ x: 50, y: y - 80, width: 512, height: 80, borderColor: borderColor, borderLineWidth: 0.5 });
+        page17.drawText('NueSynergy smart debit cards are always free', { x: 60, y: y - 14, size: 9, font: regularFont, color: textColor });
+        page17.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: 60, y: y - 26, size: 9, font: regularFont, color: textColor });
+        page17.drawText('Outstanding Service is always included-', { x: 60, y: y - 45, size: 9, font: regularFont, color: textColor });
 
         // Page 17 Footer
         page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
