@@ -294,11 +294,11 @@ async function createProposalPDF(data, outputPath) {
         const borderColor = rgb(200 / 255, 200 / 255, 200 / 255);
         const textColor = rgb(51 / 255, 51 / 255, 51 / 255);
 
-        const tableWidth = 540;
+        const tableWidth = 572;
         const width = 612; // Standard Letter width
         const tableX = (width - tableWidth) / 2;
-        const priceX = tableX + 330;
-        const dateX = tableX + 430;
+        const priceX = tableX + 360;
+        const dateX = tableX + 465;
 
         const drawSectionHeader = (page, y, title) => {
             page.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: primaryColor });
@@ -391,8 +391,8 @@ async function createProposalPDF(data, outputPath) {
 
         page16.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: accentColor });
         page16.drawText(`GROUP: ${groupName}`, { x: tableX + 10, y: y - 14, size: 9, font: boldFont, color: textColor });
-        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: tableX + 230, y: y - 14, size: 9, font: boldFont, color: textColor });
-        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: tableX + 410, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: tableX + 250, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: tableX + 450, y: y - 14, size: 9, font: boldFont, color: textColor });
         y -= 25;
 
         // HSA
@@ -430,13 +430,10 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('HRA'), getProductDate('HRA'), true);
         y -= 10;
 
-        // Miscellaneous
-        y = drawSectionHeader(page16, y, 'Miscellaneous Services');
-        page16.drawText('» HSA, FSA, HRA PLANS', { x: tableX + 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
-        const miscDate = (selection.hsa || selection.fsa || selection.hra || selection.lsa) ? effDate : '-';
-        y = drawRow(page16, y, 'eClaims Manager Per Participant, Monthly', '-', miscDate);
-        y = drawRow(page16, y, 'NueSynergy Smart Mobile App', 'Included', miscDate);
-        y = drawRow(page16, y, 'Smart Debit Card Setup & Administration Per Participant, Monthly', '-', miscDate);
+        // Section 125, Premium Only Plan (POP)
+        y = drawSectionHeader(page16, y, 'Section 125, Premium Only Plan (POP)');
+        y = drawRow(page16, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), getProductDate('POP'));
+        y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getProductDate('POP'), true);
         y -= 10;
 
         // LSA
@@ -489,10 +486,13 @@ async function createProposalPDF(data, outputPath) {
         y = drawRow(page17, y, 'Direct Bill Minimum, Monthly', findMinFee('Direct'), getProductDate('Direct'), true);
         y -= 10;
 
-        // POP
-        y = drawSectionHeader(page17, y, 'Section 125, Premium Only Plan (POP)');
-        y = drawRow(page17, y, 'POP Document (ONE-TIME SETUP FEE)', findRate('POP'), getProductDate('POP'));
-        y = drawRow(page17, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getProductDate('POP'), true);
+        // Miscellaneous Services
+        y = drawSectionHeader(page17, y, 'Miscellaneous Services');
+        page17.drawText('» HSA, FSA, HRA PLANS', { x: tableX + 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
+        const miscDate = (selection.hsa || selection.fsa || selection.hra || selection.lsa) ? effDate : '-';
+        y = drawRow(page17, y, 'eClaims Manager Per Participant, Monthly', '-', miscDate);
+        y = drawRow(page17, y, 'NueSynergy Smart Mobile App', 'Included', miscDate);
+        y = drawRow(page17, y, 'Smart Debit Card Setup & Administration Per Participant, Monthly', '-', miscDate);
         y -= 10;
 
         // Files
@@ -510,10 +510,10 @@ async function createProposalPDF(data, outputPath) {
         page17.drawText('Proposal Notes', { x: tableX + 10, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
         y -= 20;
 
-        page17.drawRectangle({ x: tableX, y: y - 80, width: tableWidth, height: 80, borderColor: borderColor, borderLineWidth: 0.5 });
+        page17.drawRectangle({ x: tableX, y: y - 55, width: tableWidth, height: 55, borderColor: borderColor, borderLineWidth: 0.5 });
         page17.drawText('NueSynergy smart debit cards are always free', { x: tableX + 10, y: y - 14, size: 9, font: regularFont, color: textColor });
         page17.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: tableX + 10, y: y - 26, size: 9, font: regularFont, color: textColor });
-        page17.drawText('Outstanding Service is always included-', { x: tableX + 10, y: y - 45, size: 9, font: regularFont, color: textColor });
+        page17.drawText('Outstanding Service is always included-', { x: tableX + 10, y: y - 40, size: 9, font: regularFont, color: textColor });
 
         // Page 17 Footer
         page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
