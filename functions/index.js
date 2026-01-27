@@ -378,8 +378,8 @@ async function createProposalPDF(data, outputPath) {
 
         page16.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: accentColor });
         page16.drawText(`GROUP: ${groupName}`, { x: tableX + 10, y: y - 14, size: 9, font: boldFont, color: textColor });
-        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: tableX + 250, y: y - 14, size: 9, font: boldFont, color: textColor });
-        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: tableX + 450, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: tableX + 225, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: tableX + 415, y: y - 14, size: 9, font: boldFont, color: textColor });
         y -= 25;
 
         // HSA
