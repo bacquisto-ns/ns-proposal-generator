@@ -377,9 +377,13 @@ async function createProposalPDF(data, outputPath) {
         y -= 25;
 
         // HSA
-        y = drawSectionHeader(page16, y, 'HSA Plans');
-        y = drawRow(page16, y, 'HSA Plans Effective Date', '', getProductDate('HSA'));
-        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getProductDate('HSA'), true);
+        page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: primaryColor });
+        page16.drawText('HSA Plans Effective Date', { x: 60, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        page16.drawText('Effective Date', { x: 480, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        y -= 20;
+
+        y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getProductDate('HSA'));
+        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('HSA'), getProductDate('HSA'), true);
         y -= 10;
 
         y = drawSectionHeader(page16, y, 'Spouse Saver Incentive Account');
