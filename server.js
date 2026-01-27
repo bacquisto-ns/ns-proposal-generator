@@ -294,19 +294,25 @@ async function createProposalPDF(data, outputPath) {
         const borderColor = rgb(200 / 255, 200 / 255, 200 / 255);
         const textColor = rgb(51 / 255, 51 / 255, 51 / 255);
 
+        const tableWidth = 540;
+        const width = 612; // Standard Letter width
+        const tableX = (width - tableWidth) / 2;
+        const priceX = tableX + 330;
+        const dateX = tableX + 430;
+
         const drawSectionHeader = (page, y, title) => {
-            page.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: primaryColor });
-            page.drawText(title, { x: 60, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
-            page.drawText('Price', { x: 380, y: y - 14, size: 10, font: regularFont, color: rgb(1, 1, 1) });
-            page.drawText('Effective Date', { x: 480, y: y - 14, size: 10, font: regularFont, color: rgb(1, 1, 1) });
+            page.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: primaryColor });
+            page.drawText(title, { x: tableX + 10, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+            page.drawText('Price', { x: priceX, y: y - 14, size: 10, font: regularFont, color: rgb(1, 1, 1) });
+            page.drawText('Effective Date', { x: dateX, y: y - 14, size: 10, font: regularFont, color: rgb(1, 1, 1) });
             return y - 20;
         };
 
         const drawRow = (page, y, label, price = '-', effectiveDate = '-', isSub = false) => {
-            page.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, borderColor: borderColor, borderLineWidth: 0.5 });
-            page.drawText(label, { x: isSub ? 70 : 60, y: y - 14, size: 9, font: isSub ? regularFont : boldFont, color: textColor });
-            page.drawText(price, { x: 380, y: y - 14, size: 9, font: regularFont, color: textColor });
-            page.drawText(effectiveDate, { x: 480, y: y - 14, size: 9, font: regularFont, color: textColor });
+            page.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, borderColor: borderColor, borderLineWidth: 0.5 });
+            page.drawText(label, { x: isSub ? tableX + 20 : tableX + 10, y: y - 14, size: 9, font: isSub ? regularFont : boldFont, color: textColor });
+            page.drawText(price, { x: priceX, y: y - 14, size: 9, font: regularFont, color: textColor });
+            page.drawText(effectiveDate, { x: dateX, y: y - 14, size: 9, font: regularFont, color: textColor });
             return y - 20;
         };
 
@@ -347,7 +353,7 @@ async function createProposalPDF(data, outputPath) {
 
         // --- PAGE 16 ---
         let page16 = finalDoc.addPage();
-        let { width, height } = page16.getSize();
+        let { height } = page16.getSize();
 
         // Banner
         page16.drawRectangle({ x: 0, y: height - 40, width, height: 40, color: secondaryColor });
@@ -383,16 +389,16 @@ async function createProposalPDF(data, outputPath) {
         const groupName = data.businessName || data.employerName || '';
         const proposalDate = data.proposalDate || new Date().toLocaleDateString();
 
-        page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: accentColor });
-        page16.drawText(`GROUP: ${groupName}`, { x: 60, y: y - 14, size: 9, font: boldFont, color: textColor });
-        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: 250, y: y - 14, size: 9, font: boldFont, color: textColor });
-        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: 400, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: accentColor });
+        page16.drawText(`GROUP: ${groupName}`, { x: tableX + 10, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`EFFECTIVE DATE: ${effDate}`, { x: tableX + 230, y: y - 14, size: 9, font: boldFont, color: textColor });
+        page16.drawText(`PROPOSAL DATE: ${proposalDate}`, { x: tableX + 410, y: y - 14, size: 9, font: boldFont, color: textColor });
         y -= 25;
 
         // HSA
-        page16.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: primaryColor });
-        page16.drawText('HSA Plans Effective Date', { x: 60, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
-        page16.drawText('Effective Date', { x: 480, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        page16.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: primaryColor });
+        page16.drawText('HSA Plans Effective Date', { x: tableX + 10, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        page16.drawText('Effective Date', { x: dateX, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
         y -= 20;
 
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('HSA'), getProductDate('HSA'));
@@ -408,7 +414,7 @@ async function createProposalPDF(data, outputPath) {
 
         // FSA
         y = drawSectionHeader(page16, y, 'Section 125, FSA Plans');
-        page16.drawText('»HEALTH CARE, DEPENDENT CARE, LIMITED PURPOSE, COMMUTER, ADOPTION', { x: 180, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
+        page16.drawText('»HEALTH CARE, DEPENDENT CARE, LIMITED PURPOSE, COMMUTER, ADOPTION', { x: tableX + 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         y = drawRow(page16, y, 'FSA Plan Documents, Implementation, Design & Installation', findRate('FSA'), getProductDate('FSA'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (AFTER YEAR 1)', '-', getProductDate('FSA'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('FSA'), getProductDate('FSA'), true);
@@ -417,7 +423,7 @@ async function createProposalPDF(data, outputPath) {
 
         // HRA
         y = drawSectionHeader(page16, y, 'Section 105, HRA Plans');
-        page16.drawText('» TRADITIONAL, ICHRA, QSEHRA', { x: 180, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
+        page16.drawText('» TRADITIONAL, ICHRA, QSEHRA', { x: tableX + 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         y = drawRow(page16, y, 'HRA Plan Documents, Implementation, Design & Installation', findRate('HRA'), getProductDate('HRA'));
         y = drawRow(page16, y, 'Annual Compliance & Renewal (WAIVED 1st YEAR)', '-', getProductDate('HRA'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('HRA'), getProductDate('HRA'), true);
@@ -426,7 +432,7 @@ async function createProposalPDF(data, outputPath) {
 
         // Miscellaneous
         y = drawSectionHeader(page16, y, 'Miscellaneous Services');
-        page16.drawText('» HSA, FSA, HRA PLANS', { x: 180, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
+        page16.drawText('» HSA, FSA, HRA PLANS', { x: tableX + 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         const miscDate = (selection.hsa || selection.fsa || selection.hra || selection.lsa) ? effDate : '-';
         y = drawRow(page16, y, 'eClaims Manager Per Participant, Monthly', '-', miscDate);
         y = drawRow(page16, y, 'NueSynergy Smart Mobile App', 'Included', miscDate);
@@ -435,24 +441,16 @@ async function createProposalPDF(data, outputPath) {
 
         // LSA
         y = drawSectionHeader(page16, y, 'LSA Plans');
-        page16.drawText('» HEALTH & WELLNESS, STUDENT LOAN PAYBACK, ACTIVITY FEES, APPAREL', { x: 130, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
+        page16.drawText('» HEALTH & WELLNESS, STUDENT LOAN PAYBACK, ACTIVITY FEES, APPAREL', { x: tableX + 80, y: y + 6, size: 7, font: regularFont, color: rgb(1, 1, 1) });
         y = drawRow(page16, y, 'LSA Implementation, Design & Installation', findRate('LSA'), getProductDate('LSA'));
         y = drawRow(page16, y, 'Annual Renewal (WAIVED 1st YEAR)', '-', getProductDate('LSA'), true);
         y = drawRow(page16, y, 'Per Participant Per Month', findRate('LSA'), getProductDate('LSA'), true);
         y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('LSA'), getProductDate('LSA'), true);
         y -= 10;
 
-        // COBRA
-        y = drawSectionHeader(page16, y, 'COBRAcare+ Administration');
-        y = drawRow(page16, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getProductDate('COBRA'));
-        y = drawRow(page16, y, 'Current COBRA Continuation', '-', getProductDate('COBRA'), true);
-        y = drawRow(page16, y, 'Initial Notice (OPTIONAL)', '-', getProductDate('COBRA'), true);
-        y = drawRow(page16, y, 'Qualifying Event Notice', '-', getProductDate('COBRA'), true);
-        y = drawRow(page16, y, 'Open Enrollment Notice', '-', getProductDate('COBRA'), true);
-        y = drawRow(page16, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('COBRA'), getProductDate('COBRA'), true);
 
         // Page 16 Footer
-        page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
+        page16.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
 
         // --- PAGE 17 ---
         let page17 = finalDoc.addPage();
@@ -462,6 +460,16 @@ async function createProposalPDF(data, outputPath) {
         page17.drawText('Administrative Services', { x: 50, y: height - 90, size: 12, font: regularFont, color: rgb(1, 1, 1) });
 
         y = height - 120;
+
+        // COBRA (Moved from Page 16)
+        y = drawSectionHeader(page17, y, 'COBRAcare+ Administration');
+        y = drawRow(page17, y, 'Per Benefits Enrolled Employee Per Month', findRate('COBRA'), getProductDate('COBRA'));
+        y = drawRow(page17, y, 'Current COBRA Continuation', '-', getProductDate('COBRA'), true);
+        y = drawRow(page17, y, 'Initial Notice (OPTIONAL)', '-', getProductDate('COBRA'), true);
+        y = drawRow(page17, y, 'Qualifying Event Notice', '-', getProductDate('COBRA'), true);
+        y = drawRow(page17, y, 'Open Enrollment Notice', '-', getProductDate('COBRA'), true);
+        y = drawRow(page17, y, 'Monthly Minimum (APPLIES ONLY IF GREATER THAN PEPM)', findMinFee('COBRA'), getProductDate('COBRA'), true);
+        y -= 10;
 
         // Combined Billing
         y = drawSectionHeader(page17, y, 'Combined Billing');
@@ -498,17 +506,17 @@ async function createProposalPDF(data, outputPath) {
         y -= 10;
 
         // Proposal Notes
-        page17.drawRectangle({ x: 50, y: y - 20, width: 512, height: 20, color: primaryColor });
-        page17.drawText('Proposal Notes', { x: 60, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
+        page17.drawRectangle({ x: tableX, y: y - 20, width: tableWidth, height: 20, color: primaryColor });
+        page17.drawText('Proposal Notes', { x: tableX + 10, y: y - 14, size: 10, font: boldFont, color: rgb(1, 1, 1) });
         y -= 20;
 
-        page17.drawRectangle({ x: 50, y: y - 80, width: 512, height: 80, borderColor: borderColor, borderLineWidth: 0.5 });
-        page17.drawText('NueSynergy smart debit cards are always free', { x: 60, y: y - 14, size: 9, font: regularFont, color: textColor });
-        page17.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: 60, y: y - 26, size: 9, font: regularFont, color: textColor });
-        page17.drawText('Outstanding Service is always included-', { x: 60, y: y - 45, size: 9, font: regularFont, color: textColor });
+        page17.drawRectangle({ x: tableX, y: y - 80, width: tableWidth, height: 80, borderColor: borderColor, borderLineWidth: 0.5 });
+        page17.drawText('NueSynergy smart debit cards are always free', { x: tableX + 10, y: y - 14, size: 9, font: regularFont, color: textColor });
+        page17.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: tableX + 10, y: y - 26, size: 9, font: regularFont, color: textColor });
+        page17.drawText('Outstanding Service is always included-', { x: tableX + 10, y: y - 45, size: 9, font: regularFont, color: textColor });
 
         // Page 17 Footer
-        page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: 50, y: 30, size: 8, font: regularFont, color: textColor });
+        page17.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
 
         const pdfBytes = await finalDoc.save();
         fs.writeFileSync(outputPath, pdfBytes);
