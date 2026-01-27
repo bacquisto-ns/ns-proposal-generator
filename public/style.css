@@ -59,8 +59,30 @@ body.embed-mode .container {
 .portal-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: 
+        "main sidebar"
+        "bottom bottom";
     gap: 44px;
     align-items: start;
+}
+
+.portal-main-fields {
+    grid-area: main;
+    min-width: 0;
+}
+
+.portal-summary {
+    grid-area: sidebar;
+    position: sticky;
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-left: 8px;
+}
+
+.portal-full-width {
+    grid-area: bottom;
 }
 
 .visually-hidden {
@@ -75,30 +97,7 @@ body.embed-mode .container {
     border: 0;
 }
 
-.portal-main {
-    min-width: 0;
-}
-
-#formSection {
-    position: relative;
-}
-
-.btn-admin {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    z-index: 2;
-}
-
-.portal-summary {
-    position: sticky;
-    top: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding-left: 8px;
-}
+/* Handled by grid-area now */
 
 .summary-card {
     background: white;
@@ -417,13 +416,14 @@ input,
 select,
 textarea {
     width: 100%;
-    padding: 5px 12px 5px 16px;
+    padding: 8px 10px; /* Uniform padding */
     border: 1px solid var(--border);
     border-radius: 12px;
     background: white;
-    font-size: 1rem;
+    font-size: 0.95rem; /* Slightly smaller for better fit */
     transition: all 0.2s;
     color: var(--text);
+    box-sizing: border-box;
 }
 
 input:focus,
@@ -610,12 +610,12 @@ table {
 /* Product Table Scoped Widths (8 columns) */
 .product-table th:nth-child(1),
 .product-table td:nth-child(1) {
-    width: 22%;
+    width: 25%; /* Increased for product names */
 }
 
 .product-table th:nth-child(2),
 .product-table td:nth-child(2) {
-    width: 14%;
+    width: 18%; /* Increased for tier text */
 }
 
 .product-table th:nth-child(3),
@@ -632,19 +632,19 @@ table {
 
 .product-table th:nth-child(5),
 .product-table td:nth-child(5) {
-    width: 14%;
+    width: 12%;
     text-align: center;
 }
 
 .product-table th:nth-child(6),
 .product-table td:nth-child(6) {
-    width: 8%;
+    width: 10%;
     text-align: center;
 }
 
 .product-table th:nth-child(7),
 .product-table td:nth-child(7) {
-    width: 18%;
+    width: 11%;
     text-align: center;
 }
 
@@ -658,12 +658,13 @@ table {
 
 th {
     text-align: left;
-    padding: 12px 12px;
+    padding: 10px 8px; /* Reduced padding */
     color: var(--text-light);
-    font-size: 0.75rem;
+    font-size: 0.65rem; /* Smaller font for long headers */
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border);
+    line-height: 1.2;
 }
 
 td {

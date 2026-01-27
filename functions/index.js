@@ -514,6 +514,15 @@ async function createProposalPDF(data, outputPath) {
         page18.drawText('-Includes NueSynergy Smart Mobile App with Account Tracking, Find Care, Pharmacy/Provider cost transparency tools.', { x: tableX + 10, y: y - 26, size: 9, font: regularFont, color: textColor });
         page18.drawText('Outstanding Service is always included-', { x: tableX + 10, y: y - 40, size: 9, font: regularFont, color: textColor });
 
+        // Add Proposal Message
+        if (data.proposalMessage) {
+            y -= 65; // Move below the rectangle (55 height + 10 padding)
+            const messageLines = wrapText(data.proposalMessage, tableWidth - 20, 9, regularFont);
+            messageLines.forEach((line, index) => {
+                page18.drawText(line, { x: tableX + 10, y: y - (index * 12), size: 9, font: regularFont, color: textColor });
+            });
+        }
+
         // Page 18 Footer
         page18.drawText('855.890.7239  •  4601 College Blvd. Suite 280, Leawood, KS 66211  •  www.NueSynergy.com', { x: tableX, y: 30, size: 8, font: regularFont, color: textColor });
 
