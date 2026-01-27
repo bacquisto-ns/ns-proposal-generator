@@ -447,6 +447,7 @@ async function loadTemplateContent(name) {
 
         editor.value = data.content;
         saveBtn.disabled = false;
+        document.getElementById('previewTemplateBtn').disabled = false;
         status.textContent = 'Ready';
 
         // Auto-resize if needed or set height logic
@@ -454,6 +455,91 @@ async function loadTemplateContent(name) {
         console.error('Error loading template content:', error);
         status.textContent = 'Error loading template';
         saveBtn.disabled = true;
+        document.getElementById('previewTemplateBtn').disabled = true;
+    }
+}
+
+async function previewTemplate() {
+    const editor = document.getElementById('templateEditor');
+    const iframe = document.getElementById('previewIframe');
+    const modal = document.getElementById('previewModal');
+    const previewBtn = document.getElementById('previewTemplateBtn');
+
+    const content = editor.value;
+    if (!content) return;
+
+    previewBtn.disabled = true;
+    previewBtn.textContent = 'Loading...';
+
+    // Dummy data for placeholders
+    const dummyData = {
+        employerName: "ACME Corp",
+        businessName: "ACME Corp",
+        brokerName: "John Broker",
+        salesPerson: "Jane Sales",
+        totalEmployees: "150",
+        effectiveDate: "01/01/2026",
+        yearlyValue: "15,000.00",
+        productRows: `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">HSA</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">150</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #d32f2f; font-weight: bold; text-align: left;">$3.50</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-style: italic; color: #666; text-align: left;">Special Promo</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">COBRA</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">150</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #d32f2f; font-weight: bold; text-align: left;">$0.75</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-style: italic; color: #666; text-align: left;">Bundled Rate</td>
+            </tr>
+        `,
+        productTableRows: `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">HSA</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">01/01/2026</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">COBRA</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">01/01/2026</td>
+            </tr>
+        `,
+        proposalMessageBlock: `
+            <div style="margin-top: 20px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <p style="margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: #64748b;"><strong>Proposal Message</strong></p>
+                <p style="margin: 0; font-size: 14px; color: #334155;">This is a sample proposal message to show how it will appear in the final email.</p>
+            </div>
+        `,
+        baseUrl: window.location.origin,
+        pdfUrl: "#",
+        opportunityId: "SAMPLE_ID",
+        locationId: "SAMPLE_LOCATION",
+        currentYear: new Date().getFullYear()
+    };
+
+    try {
+        const response = await fetch('/api/admin/email-templates/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, data: dummyData })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate preview');
+        const { html } = await response.json();
+
+        // Inject into iframe
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        modal.style.display = 'block';
+    } catch (error) {
+        console.error('Error generating preview:', error);
+        alert('Failed to generate preview: ' + error.message);
+    } finally {
+        previewBtn.disabled = false;
+        previewBtn.textContent = 'Preview';
     }
 }
 
@@ -531,6 +617,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveTemplateBtn) {
         saveTemplateBtn.addEventListener('click', saveTemplate);
     }
+
+    const previewTemplateBtn = document.getElementById('previewTemplateBtn');
+    if (previewTemplateBtn) {
+        previewTemplateBtn.addEventListener('click', previewTemplate);
+    }
+
+    // Preview Modal close logic
+    const previewModal = document.getElementById('previewModal');
+    const closePreviewModal = document.querySelector('.close-preview-modal');
+    const closePreviewBtn = document.querySelector('.close-preview-btn');
+
+    if (closePreviewModal) {
+        closePreviewModal.onclick = () => previewModal.style.display = 'none';
+    }
+    if (closePreviewBtn) {
+        closePreviewBtn.onclick = () => previewModal.style.display = 'none';
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target == previewModal) previewModal.style.display = 'none';
+    });
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {

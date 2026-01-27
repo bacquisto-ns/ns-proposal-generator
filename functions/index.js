@@ -160,6 +160,27 @@ app.post('/api/admin/email-templates/:name', async (req, res) => {
     }
 });
 
+app.post('/api/admin/email-templates/preview', async (req, res) => {
+    try {
+        const { content, data } = req.body;
+        if (!content) return res.status(400).json({ error: 'Content is required' });
+
+        let rendered = content;
+        const previewData = data || {};
+
+        // Replace placeholders {{key}}
+        Object.keys(previewData).forEach(key => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            rendered = rendered.replace(regex, previewData[key]);
+        });
+
+        res.json({ html: rendered });
+    } catch (error) {
+        console.error('[Admin] Failed to preview template:', error);
+        res.status(500).json({ error: 'Failed to preview template' });
+    }
+});
+
 const validateOpportunityInput = (data) => {
     const errors = [];
     if (!data.locationId || typeof data.locationId !== 'string') {
