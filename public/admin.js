@@ -113,8 +113,8 @@ function initOpportunityGrid(data) {
             { name: 'Employer', formatter: (cell) => gridjs.html(`<strong>${escapeHtml(cell)}</strong>`) },
             'Effective',
             'Broker',
-            { name: 'Products', width: '200px', formatter: (cell) => gridjs.html(`<small>${escapeHtml(cell)}</small>`) },
-            { name: 'Employees', width: '100px' },
+            { name: 'Products', formatter: (cell) => gridjs.html(`<small>${escapeHtml(cell)}</small>`) },
+            { name: 'Employees' },
             { name: 'Yearly Total', formatter: (cell) => `$${parseFloat(cell || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
             {
                 name: 'Status',

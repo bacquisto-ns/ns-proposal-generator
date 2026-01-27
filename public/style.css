@@ -901,7 +901,7 @@ tfoot td {
 
 .admin-page .gridjs-table {
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .admin-page #auditTable {
@@ -911,9 +911,15 @@ tfoot td {
 
 .admin-page .gridjs-th,
 .admin-page .gridjs-td {
+    white-space: nowrap;
+    padding: 12px 16px;
+}
+
+/* Specific wrapping for Products column in Opportunities Grid */
+#oppGrid .gridjs-td:nth-child(5) {
     white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    min-width: 180px;
+    max-width: 300px;
 }
 
 .admin-page #auditTable th,
