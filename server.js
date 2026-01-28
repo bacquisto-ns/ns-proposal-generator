@@ -1101,6 +1101,158 @@ app.get('/api/opportunities', async (req, res) => {
     }
 });
 
+// Fetch a single opportunity from Firestore
+app.get('/api/opportunities/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(`[Opportunities API] Fetching opportunity with ID: ${id}`);
+        const doc = await admin.firestore().collection('opportunities').doc(id).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ error: 'Opportunity not found' });
+        }
+
+        res.json({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        console.error('[Opportunities API] Error fetching single opportunity:', error.message);
+        res.status(500).json({ error: 'Failed to fetch opportunity' });
+    }
+});
+
+// Update an existing opportunity
+app.post('/api/update-opportunity', async (req, res) => {
+    const { id, ...updateData } = req.body;
+    if (!id) return res.status(400).json({ error: 'Opportunity ID (Firestore ID) is required' });
+
+    try {
+        const ghlService = await getGHLService(GHL_API_KEY);
+        console.log(`--- Processing Update Opportunity Request for Firestore ID: ${id} ---`);
+
+        // 1. Get existing opportunity from Firestore
+        const docRef = admin.firestore().collection('opportunities').doc(id);
+        const doc = await docRef.get();
+        if (!doc.exists) throw new Error('Opportunity not found in Firestore');
+        const existingData = doc.data();
+
+        // 2. Sanitize update data
+        const sanitized = sanitizeOpportunityData(updateData);
+        const actor = {
+            name: sanitized.contact?.name || 'Unknown Broker',
+            email: sanitized.contact?.email || 'N/A',
+            role: 'Broker'
+        };
+
+        // 3. Update Opportunity in GHL
+        const ghlOpportunityId = existingData.ghl?.opportunityId;
+        if (!ghlOpportunityId) throw new Error('Existing GHL Opportunity ID not found');
+
+        const hasOverride = (sanitized.products || []).some(p => p.isOverride);
+        const opportunityPayload = {
+            name: sanitized.name,
+            pipelineStageId: hasOverride ? STAGE_PENDING_APPROVAL : STAGE_PROPOSAL_SENT,
+            monetaryValue: sanitized.monetaryValue,
+            source: sanitized.source,
+            customFields: sanitized.customFields,
+            assignedTo: sanitized.assignedTo
+        };
+
+        await logAudit('OPPORTUNITY_UPDATE_ATTEMPT', 'Opportunity', ghlOpportunityId, opportunityPayload, req, 'SUCCESS', actor);
+        await ghlService.updateOpportunity(ghlOpportunityId, opportunityPayload);
+        await logAudit('OPPORTUNITY_UPDATE_SUCCESS', 'Opportunity', ghlOpportunityId, { ...opportunityPayload }, req, 'SUCCESS', actor);
+
+        // 4. Update Firestore
+        const firestoreUpdate = {
+            employerName: sanitized.employerName || sanitized.contact?.companyName || sanitized.name,
+            lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            details: {
+                effectiveDate: sanitized.customFields.find(f => f.id === 'TCajUYyGFfxNawfFVHzH' || f.key === 'opportunity.rfp_effective_date')?.field_value,
+                proposalDate: sanitized.customFields.find(f => f.id === 'qDAjtgB8BnOe44mmBxZJ' || f.key === 'opportunity.proposal_date')?.field_value,
+                totalEmployees: parseInt(sanitized.customFields.find(f => f.id === '1Ns6AFE7tqfjLrSMmlGm' || f.key === 'opportunity.total_employees')?.field_value || '0'),
+                source: sanitized.source || sanitized.customFields.find(f => f.id === '4Ft4xkId76QFmogGxQLT' || f.key === 'opportunity.opportunity_source' || f.key === 'opportunity.source')?.field_value,
+                currentAdministrator: sanitized.customFields.find(f => f.id === 'gG9uknunlZBamXsF5Ynu' || f.key === 'opportunity.current_administrator')?.field_value,
+                benAdminSystem: sanitized.customFields.find(f => f.id === 'FbHjdv6IH9saWvWxD9qk' || f.key === 'opportunity.ben_admin_system')?.field_value,
+                postalCode: sanitized.customFields.find(f => f.id === 'RjgwrcO6mdOKu80HsZA2' || f.key === 'opportunity.postal_code')?.field_value || '',
+                proposalMessage: sanitized.proposalMessage || ''
+            },
+            assignment: {
+                assignedToUser: sanitized.assignedTo
+            },
+            products: sanitized.products,
+            financials: {
+                monthlyTotal: parseFloat(sanitized.customFields.find(f => f.id === '7R4mvELrwlpcNtwFbeN1' || f.key === 'opportunity.monthly_total')?.field_value || '0'),
+                yearlyTotal: parseFloat(sanitized.customFields.find(f => f.id === 'h4RmeiogDVZGhb0DEaia' || f.key === 'opportunity.yearly_total')?.field_value || '0')
+            },
+            approval: {
+                requiresApproval: hasOverride,
+                approverName: sanitized.customFields.find(f => f.id === 'k29uFeF1SbZ5tIPSn7ro' || f.key === 'opportunity.approver_name')?.field_value,
+                status: hasOverride ? (existingData.approval?.status === 'approved' ? 'approved' : 'pending') : 'not_required'
+            },
+            'ghl.syncedAt': admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        await docRef.update(firestoreUpdate);
+        console.log('Updated Firestore successfully.');
+
+        // 5. PDF Regeneration
+        const tempDir = path.join(__dirname, 'temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+        const fileName = `Proposal_Updated_${sanitized.employerName || 'Group'}_${Date.now()}.pdf`;
+        const filePath = path.join(tempDir, fileName);
+
+        const pdfData = {
+            businessName: sanitized.employerName || sanitized.contact?.companyName || 'N/A',
+            effectiveDate: firestoreUpdate.details.effectiveDate,
+            proposalDate: firestoreUpdate.details.proposalDate,
+            products: sanitized.products,
+            proposalMessage: sanitized.proposalMessage || ''
+        };
+
+        console.log('Regenerating PDF...');
+        await createProposalPDF(pdfData, filePath);
+
+        // 6. Upload and Link PDF
+        const contactId = existingData.ghl?.contactId;
+        let pdfUrl = null;
+        if (contactId) {
+            const stats = fs.statSync(filePath);
+            const form = new FormData();
+            form.append('file', fs.createReadStream(filePath), { filename: fileName, contentType: 'application/pdf', knownLength: stats.size });
+
+            const uploadRes = await ghlService.uploadFile(form);
+            pdfUrl = uploadRes.url || uploadRes.data?.url;
+
+            if (pdfUrl) {
+                await ghlService.addContactNote(contactId, `**Updated** NueSynergy Pricing Proposal generated. [Link to Proposal](${pdfUrl})`);
+                await docRef.update({
+                    'proposal.pdfUrl': pdfUrl,
+                    'proposal.generatedAt': admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }
+
+        // 7. Automation: Approval vs Direct Email
+        if (hasOverride && firestoreUpdate.approval.status === 'pending') {
+            await sendApprovalEmail(sanitized, ghlOpportunityId, ghlService);
+        } else if (pdfUrl) {
+            const sendResult = await sendProposalEmail({
+                ...sanitized,
+                contactId: contactId
+            }, pdfUrl, ghlService);
+
+            if (sendResult.ok) {
+                await ghlService.addContactNote(contactId, `**Updated** Pricing Proposal sent to Broker via automated email. [Link to Proposal](${pdfUrl})`);
+            }
+            await applyProposalEmailUpdate(docRef, sendResult);
+        }
+
+        res.json({ success: true, opportunityId: ghlOpportunityId, firestoreId: id });
+
+    } catch (error) {
+        console.error('Update ERROR:', error.message);
+        res.status(500).json({ error: 'Failed to update opportunity', details: error.message });
+    }
+});
+
 // Update the generate-pdf endpoint to also handle sending emails if metadata is present
 app.post('/api/generate-pdf', async (req, res) => {
     try {

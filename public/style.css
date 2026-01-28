@@ -70,6 +70,54 @@ body.embed-mode .container {
 .portal-main-fields {
     grid-area: main;
     min-width: 0;
+    position: relative;
+}
+
+.header-actions {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.header-actions .btn {
+    pointer-events: auto;
+}
+
+.header-actions .btn {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: all 0.2s;
+}
+
+.btn-admin {
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-update {
+    border: 1px solid var(--accent);
+    color: var(--accent);
+}
+
+.btn-admin:hover,
+.btn-update:hover {
+    background: var(--bg);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .header-actions {
+        position: static;
+        margin-bottom: 20px;
+        justify-content: center;
+    }
 }
 
 .portal-summary {
@@ -1372,4 +1420,71 @@ pre {
     body.success-mode #successMessage {
         animation: none;
     }
+}
+
+/* Opportunities List Page Styles */
+.search-box {
+    margin-bottom: 24px;
+}
+
+.search-box input {
+    font-size: 1.1rem;
+    padding: 12px 20px;
+    border-radius: 50px;
+}
+
+.opportunities-list-container {
+    background: white;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.opportunities-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+.opportunities-table th {
+    background: #f8fafc;
+    padding: 16px;
+    font-size: 0.75rem;
+    text-align: left;
+    color: var(--text-light);
+    border-bottom: 1px solid var(--border);
+}
+
+.opportunities-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
+}
+
+.opportunities-table tr:last-child td {
+    border-bottom: none;
+}
+
+.opportunities-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+.small-btn {
+    padding: 6px 16px !important;
+    font-size: 0.85rem !important;
+    width: auto !important;
+    display: inline-block !important;
+    margin-top: 0 !important;
+}
+
+.loading,
+.error {
+    text-align: center;
+    padding: 40px !important;
+    color: var(--text-light);
+}
+
+.error {
+    color: #ef4444;
 }

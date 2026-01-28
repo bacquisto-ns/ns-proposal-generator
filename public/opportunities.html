@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Opportunity - NueSynergy</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="portal-layout">
+            <div class="portal-main-fields">
+                <div class="header-actions">
+                    <a href="index.html" class="btn secondary-btn btn-back">Back to Form</a>
+                </div>
+                <div class="header">
+                    <h1>NueSynergy</h1>
+                    <p class="subtitle">Select Opportunity to Update</p>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="oppSearch" placeholder="Search by employer name or broker...">
+                </div>
+
+                <div class="opportunities-list-container">
+                    <table class="opportunities-table">
+                        <thead>
+                            <tr>
+                                <th>Employer Name</th>
+                                <th>Broker</th>
+                                <th>Effective Date</th>
+                                <th>Last Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opportunitiesList">
+                            <!-- Populated via JS -->
+                            <tr>
+                                <td colspan="5" class="loading">Loading opportunities...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="ghl-api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const listElement = document.getElementById('opportunitiesList');
+            const searchInput = document.getElementById('oppSearch');
+            let opportunities = [];
+
+            const renderList = (filtered) => {
+                if (filtered.length === 0) {
+                    listElement.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No opportunities found.</td></tr>';
+                    return;
+                }
+
+                listElement.innerHTML = filtered.map(opp => {
+                    const lastUpdated = opp.lastUpdatedAt ? new Date(opp.lastUpdatedAt._seconds * 1000).toLocaleDateString() : 'N/A';
+                    return `
+                        <tr>
+                            <td><strong>${opp.employerName || 'Unknown'}</strong></td>
+                            <td>${opp.broker?.name || 'N/A'}</td>
+                            <td>${opp.details?.effectiveDate || 'N/A'}</td>
+                            <td>${lastUpdated}</td>
+                            <td>
+                                <a href="index.html?id=${opp.id}" class="btn primary-btn small-btn">Update</a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            };
+
+            try {
+                const response = await fetch('/api/opportunities');
+                opportunities = await response.json();
+                renderList(opportunities);
+
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    const filtered = opportunities.filter(opp =>
+                        (opp.employerName || '').toLowerCase().includes(query) ||
+                        (opp.broker?.name || '').toLowerCase().includes(query)
+                    );
+                    renderList(filtered);
+                });
+            } catch (error) {
+                console.error('Failed to load opportunities:', error);
+                listElement.innerHTML = '<tr><td colspan="5" class="error">Failed to load opportunities. Please try again.</td></tr>';
+            }
+        });
+    </script>
+</body>
+
+</html>

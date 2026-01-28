@@ -1,4 +1,4 @@
----
+Optio---
 name: senior-software-developer
 description: Focuses on high-level architecture, system reliability, and maintainable codebase structure. Acts as a bridge between components and ensures long-term technical health.
 ---

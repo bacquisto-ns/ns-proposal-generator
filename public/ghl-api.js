@@ -608,7 +608,15 @@ if (opportunityForm) {
 loadConfig().then(() => {
     setDefaultDates();
     loadOwners();
-    updateSummary();
+
+    // Check for opportunity ID in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const opportunityId = urlParams.get('id');
+    if (opportunityId) {
+        loadOpportunityForUpdate(opportunityId);
+    } else {
+        updateSummary();
+    }
 });
 
 document.getElementById('opportunityForm').addEventListener('submit', async (e) => {
@@ -710,9 +718,18 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
     };
 
     try {
-        console.log('Sending payload to local proxy:', payload);
+        const urlParams = new URLSearchParams(window.location.search);
+        const opportunityId = urlParams.get('id');
+        const isUpdate = !!opportunityId;
 
-        const response = await fetch(CONFIG.proxyUrl, {
+        if (isUpdate) {
+            payload.id = opportunityId;
+        }
+
+        console.log(`Sending payload to ${isUpdate ? 'update' : 'create'} endpoint:`, payload);
+
+        const endpoint = isUpdate ? '/api/update-opportunity' : CONFIG.proxyUrl;
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -722,11 +739,11 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.details || errorData.error || 'Failed to create opportunity');
+            throw new Error(errorData.details || errorData.error || `Failed to ${isUpdate ? 'update' : 'create'} opportunity`);
         }
 
         const result = await response.json();
-        console.log('Success from GHL:', result);
+        console.log('Success:', result);
 
         // Check if success view exists
         const successMessage = document.getElementById('successMessage');
@@ -772,11 +789,13 @@ document.getElementById('opportunityForm').addEventListener('submit', async (e) 
             document.body.classList.remove('success-mode');
         }
     } catch (error) {
-        console.error('Error creating opportunity:', error);
+        console.error('Error processing opportunity:', error);
         alert('Failed: ' + error.message);
     } finally {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isUpdate = !!urlParams.get('id');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Opportunity';
+        submitBtn.textContent = isUpdate ? 'Update Opportunity' : 'Create Opportunity';
     }
 });
 
@@ -853,4 +872,80 @@ async function generateProposalPDF(formData) {
         console.error('Error generating PDF:', error);
         alert('Error generating PDF proposal.');
     }
+}
+
+// --- Opportunity Update Logic ---
+async function loadOpportunityForUpdate(id) {
+    try {
+        console.log(`Loading opportunity for update: ${id}`);
+        const response = await fetch(`/api/opportunities/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch opportunity data');
+        const opp = await response.json();
+
+        populateForm(opp);
+    } catch (error) {
+        console.error('Error loading opportunity:', error);
+        alert('Failed to load opportunity for update. Please try again.');
+    }
+}
+
+function populateForm(opp) {
+    const form = document.getElementById('opportunityForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Basic fields
+    if (document.getElementById('employerName')) document.getElementById('employerName').value = opp.employerName || '';
+    if (document.getElementById('brokerName')) document.getElementById('brokerName').value = opp.broker?.name || '';
+    if (document.getElementById('brokerEmail')) document.getElementById('brokerEmail').value = opp.broker?.email || '';
+    if (document.getElementById('brokerAgency')) document.getElementById('brokerAgency').value = opp.broker?.agency || '';
+
+    // Details from custom fields/details object
+    if (document.getElementById('effectiveDate')) document.getElementById('effectiveDate').value = opp.details?.effectiveDate || '';
+    if (document.getElementById('proposalDate')) document.getElementById('proposalDate').value = opp.details?.proposalDate || '';
+    if (document.getElementById('totalEmployees')) document.getElementById('totalEmployees').value = opp.details?.totalEmployees || '';
+    if (document.getElementById('opportunitySource')) document.getElementById('opportunitySource').value = opp.details?.source || '';
+    if (document.getElementById('currentAdministrator')) document.getElementById('currentAdministrator').value = opp.details?.currentAdministrator || '';
+    if (document.getElementById('benAdminSystem')) document.getElementById('benAdminSystem').value = opp.details?.benAdminSystem || '';
+    if (document.getElementById('postalCode')) document.getElementById('postalCode').value = opp.details?.postalCode || '';
+    if (document.getElementById('proposalMessage')) document.getElementById('proposalMessage').value = opp.details?.proposalMessage || '';
+
+    // Assignment
+    if (document.getElementById('assignedTo')) {
+        document.getElementById('assignedTo').value = opp.assignment?.assignedToUser || '';
+    }
+
+    // Products
+    if (opp.products && opp.products.length > 0) {
+        productBody.innerHTML = '';
+        opp.products.forEach(p => {
+            const rowFragment = createProductRow();
+            const mainRow = rowFragment.querySelector('.product-main-row');
+            const justificationRow = rowFragment.querySelector('.override-justification-row');
+
+            mainRow.querySelector('.product-select').value = p.product;
+            // Best effort tier matching
+            const tierSelect = mainRow.querySelector('.tier-select');
+            const tier = TIERS.find(t => t.label === p.tier) || TIERS[0];
+            tierSelect.value = tier.label;
+
+            mainRow.querySelector('.employees-input').value = p.employees || opp.details?.totalEmployees || '';
+            mainRow.querySelector('.product-effective-date-input').value = p.effectiveDate || opp.details?.effectiveDate || '';
+            mainRow.querySelector('.rate-input').value = p.rate;
+            mainRow.querySelector('.override-checkbox').checked = p.isOverride;
+            mainRow.querySelector('.waive-min-checkbox').checked = p.waiveMin;
+
+            if (p.isOverride) {
+                justificationRow.style.display = 'table-row';
+                justificationRow.querySelector('.justification-input').value = p.justification || '';
+            }
+
+            productBody.appendChild(rowFragment);
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.textContent = 'Update Opportunity';
+    }
+
+    updateGrandTotal();
 }
