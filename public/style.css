@@ -59,9 +59,10 @@ body.embed-mode .container {
 .portal-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 340px;
-    grid-template-areas: 
+    grid-template-areas:
         "main sidebar"
-        "bottom bottom";
+        "bottom sidebar"
+        "submit sidebar";
     gap: 44px;
     align-items: start;
 }
@@ -83,6 +84,11 @@ body.embed-mode .container {
 
 .portal-full-width {
     grid-area: bottom;
+}
+
+.portal-submit-row {
+    grid-area: submit;
+    margin-top: 20px;
 }
 
 .visually-hidden {
@@ -416,11 +422,13 @@ input,
 select,
 textarea {
     width: 100%;
-    padding: 8px 10px; /* Uniform padding */
+    padding: 8px 10px;
+    /* Uniform padding */
     border: 1px solid var(--border);
     border-radius: 12px;
     background: white;
-    font-size: 0.95rem; /* Slightly smaller for better fit */
+    font-size: 0.95rem;
+    /* Slightly smaller for better fit */
     transition: all 0.2s;
     color: var(--text);
     box-sizing: border-box;
@@ -476,6 +484,9 @@ button:active {
 
     .portal-layout {
         grid-template-columns: 1fr;
+        grid-template-areas: none;
+        display: flex;
+        flex-direction: column;
     }
 
     .portal-summary {
@@ -610,12 +621,14 @@ table {
 /* Product Table Scoped Widths (8 columns) */
 .product-table th:nth-child(1),
 .product-table td:nth-child(1) {
-    width: 25%; /* Increased for product names */
+    width: 25%;
+    /* Increased for product names */
 }
 
 .product-table th:nth-child(2),
 .product-table td:nth-child(2) {
-    width: 18%; /* Increased for tier text */
+    width: 18%;
+    /* Increased for tier text */
 }
 
 .product-table th:nth-child(3),
@@ -658,9 +671,11 @@ table {
 
 th {
     text-align: left;
-    padding: 10px 8px; /* Reduced padding */
+    padding: 10px 8px;
+    /* Reduced padding */
     color: var(--text-light);
-    font-size: 0.65rem; /* Smaller font for long headers */
+    font-size: 0.65rem;
+    /* Smaller font for long headers */
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border);
