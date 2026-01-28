@@ -665,7 +665,7 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
         const productTableRowsArr = (data.products || []).map(p => `
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.product}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.effectiveDate || data.employerName || 'N/A'}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">${p.effectiveDate || data.effectiveDate || 'N/A'}</td>
             </tr>
         `);
         const productTableRows = productTableRowsArr.join('');
@@ -675,7 +675,7 @@ async function sendProposalEmail(data, pdfUrl, ghlService) {
             pdfUrl,
             productTableRows,
             proposalMessageBlock,
-            effectiveDate: data.employerName || 'N/A', // or use a specific field if available
+            effectiveDate: data.effectiveDate || 'N/A', // Fixed from employerName
             currentYear: new Date().getFullYear()
         });
 
